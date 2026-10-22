@@ -16,8 +16,8 @@ import { Games } from './Games.tsx'
 import { Labs } from './Labs.tsx'
 import { labAt } from './labs/index.ts'
 
-/** Where the source lives. Empty until the repository is public; the footer link is hidden while it is. */
-const REPO_URL = ''
+/** Where the source lives; the footer links to it. */
+const REPO_URL = 'https://github.com/RAJAY04/siliconsight'
 
 const VIEWS: Record<View, { title: string; Panel: (p: { hw: Hardware; s: Sample; history: Sample[]; live: Live; demo: boolean }) => React.ReactNode }> = {
   chip: { title: 'Chip', Panel: ChipPanel },
