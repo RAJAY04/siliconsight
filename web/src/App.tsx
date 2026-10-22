@@ -15,6 +15,7 @@ import { Splitter, usePane } from './Splitter.tsx'
 import { Games } from './Games.tsx'
 import { Labs } from './Labs.tsx'
 import { labAt } from './labs/index.ts'
+import { gameAt } from './games.ts'
 
 /** Where the source lives; the footer links to it. */
 const REPO_URL = 'https://github.com/RAJAY04/siliconsight'
@@ -39,6 +40,7 @@ const hashView = () => {
   // A lesson is #learn/NN; a bare #lesson is not a route.
   if (lessonAt(h)) return 'lesson'
   if (labAt(h)) return 'labs'
+  if (gameAt(h)) return 'play'
   return isView(h) && h !== 'lesson' ? h : null
 }
 
@@ -120,7 +122,9 @@ function ChipInset({ hw, s, hidden, open }: { hw: Hardware; s: Sample; hidden: b
       </span>
       <DieMap hw={hw} s={s} paused={hidden} />
       <span className="inset-foot num">
-        {simple ? 'Fast' : 'P'} {mhz(s.cpu.pFreqMHz)} · {simple ? 'Eco' : 'E'} {mhz(s.cpu.eFreqMHz)} · GPU {gpuMhz(s.gpu.freqMHz)}
+        {simple
+          ? `Busy: Fast ${pct(clusterAvg(s, 'P'))} · Eco ${pct(clusterAvg(s, 'E'))}`
+          : `P ${mhz(s.cpu.pFreqMHz)} · E ${mhz(s.cpu.eFreqMHz)} · GPU ${gpuMhz(s.gpu.freqMHz)}`}
       </span>
     </div>
   )
@@ -172,6 +176,8 @@ function Loupe({ wrap, hidden }: { wrap: React.RefObject<HTMLDivElement | null>;
   )
 }
 
+const PLAIN_PRESSURE = { normal: 'plenty left', warn: 'getting full', critical: 'full' }
+
 function Rail({ hw, s, history, open, hot }: { hw: Hardware; s: Sample; history: Sample[]; open: (v: View) => void; hot: string | null }) {
   // Pad to a fixed 2-minute window so a fresh connection fills in from the right instead of stretching a few points.
   const h: (Sample | null)[] = [...Array<null>(Math.max(0, 120 - history.length)).fill(null), ...history.slice(-120)]
@@ -183,19 +189,19 @@ function Rail({ hw, s, history, open, hot }: { hw: Hardware; s: Sample; history:
       topic: 'cpu-usage',
       label: simple ? 'Workers' : 'CPU',
       value: pct(allCoreAvg(s)),
-      sub: simple ? `fast ${pct(clusterAvg(s, 'P'))} · eco ${pct(clusterAvg(s, 'E'))}` : `P ${pct(clusterAvg(s, 'P'))} · E ${pct(clusterAvg(s, 'E'))}`,
+      sub: simple ? `Fast ${pct(clusterAvg(s, 'P'))} · Eco ${pct(clusterAvg(s, 'E'))}` : `P ${pct(clusterAvg(s, 'P'))} · E ${pct(clusterAvg(s, 'E'))}`,
       spark: h.map((x) => (x ? allCoreAvg(x) : null)),
       max: 1,
     },
-    { v: 'chip', topic: 'gpu', label: simple ? 'Graphics' : 'GPU', value: pct(s.gpu.usage), sub: hw.gpuCores == null ? 'core count not reported' : `${hw.gpuCores} cores`, spark: h.map((x) => (x ? x.gpu.usage : null)), max: 1, why: 'GPU usage was not reported.' },
-    { v: 'memory', topic: 'memory-kinds', label: simple ? 'Desk Space' : 'Memory', value: memGB(usedBytes(s)), sub: `of ${memGB(m.totalBytes, 0)} · ${m.pressure}`, spark: h.map((x) => (x ? usedBytes(x) : null)), max: m.totalBytes },
-    { v: 'power', topic: 'power', label: simple ? 'Energy use' : 'Chip power', value: watts(socW(s)), sub: s.power.systemW == null ? 'CPU + GPU + ANE' : `system ${watts(recentAvg(history, (x) => x.power.systemW))}`, spark: h.map((x) => (x ? socW(x) : null)), why: 'Power counters were not readable.' },
-    { v: 'io', topic: 'ssd', label: simple ? 'Storage' : 'SSD', value: rate(s.disk.readBps + s.disk.writeBps), sub: `read ${rate(s.disk.readBps)}`, spark: h.map((x) => (x ? x.disk.readBps + x.disk.writeBps : null)) },
-    { v: 'io', topic: 'network-rates', label: simple ? 'Internet' : 'Network', value: rate(s.net.rxBps + s.net.txBps), sub: `down ${rate(s.net.rxBps)}`, spark: h.map((x) => (x ? x.net.rxBps + x.net.txBps : null)) },
+    { v: 'chip', topic: 'gpu', label: simple ? 'Graphics' : 'GPU', value: pct(s.gpu.usage), sub: hw.gpuCores == null ? (simple ? '' : 'core count not reported') : `${hw.gpuCores} ${simple ? 'graphics workers' : 'cores'}`, spark: h.map((x) => (x ? x.gpu.usage : null)), max: 1, why: 'GPU usage was not reported.' },
+    { v: 'memory', topic: 'memory-kinds', label: simple ? 'Desk Space' : 'Memory', value: memGB(usedBytes(s)), sub: `of ${memGB(m.totalBytes, 0)} · ${simple ? PLAIN_PRESSURE[m.pressure] : m.pressure}`, spark: h.map((x) => (x ? usedBytes(x) : null)), max: m.totalBytes },
+    { v: 'power', topic: 'power', label: simple ? 'Energy use' : 'Chip power', value: watts(socW(s)), sub: s.power.systemW == null ? (simple ? 'the chip alone' : 'CPU + GPU + ANE') : `${simple ? 'whole Mac' : 'system'} ${watts(recentAvg(history, (x) => x.power.systemW))}`, spark: h.map((x) => (x ? socW(x) : null)), why: 'Power counters were not readable.' },
+    { v: 'io', topic: 'ssd', label: simple ? 'Storage' : 'SSD', value: rate(s.disk.readBps + s.disk.writeBps), sub: `${simple ? 'opening' : 'read'} ${rate(s.disk.readBps)}`, spark: h.map((x) => (x ? x.disk.readBps + x.disk.writeBps : null)) },
+    { v: 'io', topic: 'network-rates', label: simple ? 'Internet' : 'Network', value: rate(s.net.rxBps + s.net.txBps), sub: `${simple ? 'downloading' : 'down'} ${rate(s.net.rxBps)}`, spark: h.map((x) => (x ? x.net.rxBps + x.net.txBps : null)) },
   ]
   if (s.battery) {
     const b = s.battery
-    items.push({ v: 'battery', topic: 'battery', label: 'Battery', value: `${Math.round(b.percent)}%`, sub: b.chargeHeld ? 'held on AC' : b.charging ? 'charging' : b.acAttached ? 'on AC' : 'on battery', spark: h.map((x) => (x ? x.battery?.percent ?? null : null)), max: 100 })
+    items.push({ v: 'battery', topic: 'battery', label: 'Battery', value: `${Math.round(b.percent)}%`, sub: b.chargeHeld ? (simple ? 'plugged in, resting' : 'held on AC') : b.charging ? 'charging' : b.acAttached ? (simple ? 'plugged in' : 'on AC') : 'on battery', spark: h.map((x) => (x ? x.battery?.percent ?? null : null)), max: 100 })
   }
   return (
     <aside className="rail" aria-label="Live readings">
@@ -269,7 +275,7 @@ export default function App() {
   useEffect(() => {
     if (!view || topic) return
     // A lesson steps back to the course; everything else back to the overview.
-    const on = (e: KeyboardEvent) => e.key === 'Escape' && (view === 'lesson' ? (location.hash = 'learn') : labAt(location.hash) ? (location.hash = 'labs') : close())
+    const on = (e: KeyboardEvent) => e.key === 'Escape' && (view === 'lesson' ? (location.hash = 'learn') : labAt(location.hash) ? (location.hash = 'labs') : gameAt(location.hash) ? (location.hash = 'play') : close())
     addEventListener('keydown', on)
     return () => removeEventListener('keydown', on)
   }, [close, view, topic])
@@ -315,8 +321,9 @@ export default function App() {
   const docked = view && !fullFrame(view) ? view : null
   const lesson = view === 'lesson' ? lessonAt(route) : null
   const lab = view === 'labs' ? labAt(route) : null
-  // A lesson or a lab steps back to its index; everything else back to the overview.
-  const up = lesson ? 'learn' : lab ? 'labs' : null
+  const game = view === 'play' ? gameAt(route) : null
+  // A lesson, a lab or a game steps back to its index; everything else back to the overview.
+  const up = lesson ? 'learn' : lab ? 'labs' : game ? 'play' : null
 
   return (
     <LearnContext.Provider value={learn}>
@@ -411,15 +418,15 @@ export default function App() {
           {Panel && view && (
             <section className="detail" aria-labelledby="detail-title">
               <div className="detail-head">
-                <button className="back" onClick={up ? () => (location.hash = up) : close} aria-label={lesson ? 'Back to the course (Esc)' : lab ? 'Back to the labs (Esc)' : docked ? 'Close details (Esc)' : 'Back to the overview (Esc)'}>
+                <button className="back" onClick={up ? () => (location.hash = up) : close} aria-label={lesson ? 'Back to the course (Esc)' : lab ? 'Back to the labs (Esc)' : game ? 'Back to the games (Esc)' : docked ? 'Close details (Esc)' : 'Back to the overview (Esc)'}>
                   <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden>
                     <path d="M10 3 L5 8 L10 13" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" />
                   </svg>
-                  {lesson ? 'Course' : lab ? 'Labs' : docked ? 'Close' : 'Back'}
+                  {lesson ? 'Course' : lab ? 'Labs' : game ? 'Games' : docked ? 'Close' : 'Back'}
                   <kbd>Esc</kbd>
                 </button>
                 <h1 id="detail-title" ref={heading} tabIndex={-1}>
-                  {lesson ? lesson.title : lab ? (simple ? lab.plain : lab.title) : simple && view === 'memory' ? 'Desk Space' : VIEWS[view].title}
+                  {lesson ? lesson.title : lab ? (simple ? lab.plain : lab.title) : game ? game.name : simple && view === 'memory' ? 'Desk Space' : VIEWS[view].title}
                 </h1>
               </div>
               <Panel hw={hw} s={latest} history={history} live={live} demo={mode === 'demo'} />

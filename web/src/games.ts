@@ -1,7 +1,7 @@
 import { box, AIR } from './layout.ts'
 import { clamp } from './format.ts'
 
-// Pure parts of the sensor games (Games.tsx): targets and the hold window for the lid, shapes and scoring for the trackpad.
+// Pure parts of the sensor games (Games.tsx): targets and scoring for the lid, shapes and scoring for the trackpad.
 
 /** Trackpad width over depth, from the drawn MacBook Air, so shapes and traces keep the real proportions. */
 export const PAD_ASPECT = (() => {
@@ -9,22 +9,33 @@ export const PAD_ASPECT = (() => {
   return r.w / r.h
 })()
 
+export type GameId = 'lid' | 'pad' | 'mole' | 'fill-ram' | 'watts' | 'heat' | 'wifi'
+export type GameMeta = { id: GameId; name: string; tech: string; blurb: string; plainBlurb: string }
+
+/** The games list in the order shown. tech names the sensor; the blurbs say what you do. */
+export const GAMES: GameMeta[] = [
+  { id: 'lid', name: 'Lid Challenge', tech: 'hinge angle sensor', blurb: 'Set the lid to a target angle by eye; the hinge sensor scores you.', plainBlurb: 'You get an angle. Tilt the screen to match it, then see how close you got.' },
+  { id: 'pad', name: 'Trackpad Drawing', tech: 'multitouch grid', blurb: 'Trace a shape on the trackpad; the raw touch grid scores the path.', plainBlurb: 'Draw the shape on the trackpad with one finger.' },
+  { id: 'mole', name: 'Whack-a-Mole', tech: 'trackpad taps', blurb: 'Tap the trackpad where the mole pops up.', plainBlurb: 'Tap the trackpad where the mole pops up.' },
+  { id: 'fill-ram', name: 'Fill the RAM', tech: 'memory pressure', blurb: 'Open apps until memory pressure rises, and watch swap and compression kick in.', plainBlurb: 'Open apps until the Desk Space runs out, and see what the Mac does next.' },
+  { id: 'watts', name: 'Guess the Watts', tech: 'power sensors', blurb: 'Guess the power draw of a task, then measure it with the power sensors.', plainBlurb: 'Guess how much power something uses, then measure it.' },
+  { id: 'heat', name: 'Heat Race', tech: 'temperature sensors', blurb: 'Load the CPU and guess when the chip starts throttling to stay cool.', plainBlurb: 'Make the chip work hard and guess when it slows down to stay cool.' },
+  { id: 'wifi', name: 'Wi-Fi Hot and Cold', tech: 'radio signal strength', blurb: 'Walk around with the Mac and follow the RSSI to the strongest spot.', plainBlurb: 'Carry the Mac around and find where the Wi-Fi is strongest.' },
+]
+
+/** The game a #play/<id> hash opens, or null for the games list and anything else. */
+export const gameAt = (hash: string): GameMeta | null => {
+  const m = /^#?play\/([\w-]+)$/.exec(hash)
+  return (m && GAMES.find((g) => g.id === m[1])) || null
+}
+
 // Lid Challenge
 
-/** Hit window: within this many degrees of the target... */
-export const LID_TOL = 2
-/** ...held for this many seconds. */
-export const LID_HOLD = 1.5
 /** Targets stay where the screen can still be seen and the Mac won't sleep from a nearly shut lid. */
 export const LID_MIN = 45
 export const LID_MAX = 120
 /** A new target is at least this far from where the lid is, so every round needs a real move. */
 export const LID_GAP = 15
-
-/** Seconds held inside the window after a step of dt seconds; leaving it, or losing the reading, starts over. */
-export function nextHold(held: number, angle: number | null, target: number, dt: number): number {
-  return angle != null && Math.abs(angle - target) <= LID_TOL ? held + dt : 0
-}
 
 /** A whole-degree target between LID_MIN and LID_MAX, at least LID_GAP from the current angle. */
 export function pickTarget(current: number | null, rand: () => number = Math.random): number {
@@ -36,8 +47,13 @@ export function pickTarget(current: number | null, rand: () => number = Math.ran
   return current != null && current < (LID_MIN + LID_MAX) / 2 ? LID_MAX : LID_MIN
 }
 
-/** Points for a hit: faster is worth more, never less than 10. */
-export const roundPoints = (left: number, limit: number) => Math.max(10, Math.round(100 * clamp(left / limit)))
+/** Points for a guess off by err degrees: full marks within a degree, then 5 fewer per degree, down to 0. */
+export const lidPoints = (err: number) => Math.max(0, Math.round(100 - 5 * Math.max(0, Math.abs(err) - 1)))
+
+export function lidVerdict(err: number): string {
+  const e = Math.abs(err)
+  return e <= 2 ? 'Spot on' : e <= 5 ? 'Very close' : e <= 10 ? 'Close' : 'Some way off'
+}
 
 // Trackpad Drawing
 

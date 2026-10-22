@@ -158,7 +158,7 @@ function frame(i: number, t: number, simple: boolean): Frame {
       out.rows.push({ p: 'A', v: 1 })
       tok('A', [pageEdge('A', 1), tableIn('A', 1)], 0.2, 1.2, '0x4200', 'A', 4.5)
       fault('A', 1, 1.2, 4)
-      if (t >= 1.2 && t < 4.4) out.kernel = simple ? "This part of the app is still on the SSD. macOS copies it in." : "Page fault: this page lives in the app's file. Read it from the SSD into a free frame."
+      if (t >= 1.2 && t < 4.4) out.kernel = simple ? "This part of the app is still on the storage drive. macOS copies it in." : "Page fault: this page lives in the app's file. Read it from the SSD into a free frame."
       if (t >= 1.8 && t < 4) out.fileRead = { from: FILE_APP, to: 7, k: phase(t, 1.8, 3.8) }
       if (t >= 1.8) out.frames.push(7)
       tok('A', walk('A', 1, 7), 4.5, 6, '0x4200')
@@ -173,7 +173,7 @@ function frame(i: number, t: number, simple: boolean): Frame {
       out.rows.push({ p: 'B', v: 2 })
       tok('B', [pageEdge('B', 2), tableIn('B', 2)], 0.2, 1.2, 'write', 'write', 4.5)
       fault('B', 2, 1.2, 4)
-      if (t >= 1.2 && t < 4.4) out.kernel = simple ? 'Two apps share this page, and Notes wants to change it. macOS gives Notes its own copy first.' : 'Page fault: write to a copy-on-write page. Copy frame 9 to a free frame, point Notes at the copy.'
+      if (t >= 1.2 && t < 4.4) out.kernel = simple ? 'Two apps share this piece, and Notes wants to change it. macOS gives Notes its own copy first.' : 'Page fault: write to a copy-on-write page. Copy frame 9 to a free frame, point Notes at the copy.'
       if (t >= 1.8) out.frames.push(9, 10)
       out.copy = t >= 1.8 && t < 4.2 ? phase(t, 1.8, 3.6) : 0
       tok('B', walk('B', 2, 10), 4.5, 6, 'write', 'write')
@@ -188,7 +188,7 @@ function frame(i: number, t: number, simple: boolean): Frame {
   return out
 }
 
-const tableText = (m: number | 'file' | null, simple: boolean) => (m === null ? (simple ? 'nothing yet' : 'not mapped') : m === 'file' ? (simple ? 'still on SSD' : 'in file') : `frame ${m}`)
+const tableText = (m: number | 'file' | null, simple: boolean) => (m === null ? (simple ? 'nothing yet' : 'not mapped') : m === 'file' ? (simple ? 'still in storage' : 'in file') : `frame ${m}`)
 
 function Scene({ f, names }: { f: Frame; names: Record<Proc, string> }) {
   const simple = useSimple()
@@ -374,7 +374,7 @@ function Split({ k }: { k: number }) {
         {simple ? 'where inside the spot: the last 14 digits stay the same' : 'offset 0xA3C: the low 14 bits, because 2^14 = 16,384 = one page'}
       </text>
       <text className="vm-split-l" x={190} y={490}>
-        {simple ? 'The real place in RAM' : 'Physical 0x18A3C'}
+        {simple ? 'The real spot on the desk' : 'Physical 0x18A3C'}
       </text>
       {[...phys].map((b, n) => (
         <g key={n} className={n < 3 ? 'pfn' : 'off'}>
@@ -503,7 +503,7 @@ export default function VirtualMemory({ s, history, demo }: LabProps) {
       ),
     },
     {
-      title: simple ? 'Fetched from the SSD' : 'Page fault: read from a file',
+      title: simple ? 'Fetched from the storage drive' : 'Page fault: read from a file',
       dur: 6.2,
       tech: (
         <p>
@@ -578,7 +578,7 @@ export default function VirtualMemory({ s, history, demo }: LabProps) {
         <LiveStat label={simple ? 'Box size' : 'Page size'} value={pageBytes == null ? 'n/a' : bytes(pageBytes, 0)} sub={simple ? 'every spot on the desk' : 'hw.pagesize'} />
         <LiveStat label={simple ? 'Stuck moments' : 'Page faults'} value={pg?.faults == null ? 'n/a' : `${num(pg.faults)}/s`} sub={<Sparkline values={faults} w={90} h={18} label="Page faults over the last minutes" />} hot={(pg?.faults ?? 0) > 20000} />
         <LiveStat label={simple ? 'Fresh spots' : 'Zero fills'} value={pg?.zeroFills == null ? 'n/a' : `${num(pg.zeroFills)}/s`} sub={simple ? 'new, wiped clean' : 'step 4'} />
-        <LiveStat label={simple ? 'Fetched from SSD' : 'Page-ins'} value={pg?.pageins == null ? 'n/a' : `${num(pg.pageins)}/s`} sub={pg?.pageins == null || pageBytes == null ? 'step 5' : `${bytes(pg.pageins * pageBytes)}/s, step 5`} />
+        <LiveStat label={simple ? 'Fetched from storage' : 'Page-ins'} value={pg?.pageins == null ? 'n/a' : `${num(pg.pageins)}/s`} sub={pg?.pageins == null || pageBytes == null ? 'step 5' : `${bytes(pg.pageins * pageBytes)}/s, step 5`} />
       </LiveStrip>
 
       <section className="card lab-stage-card">

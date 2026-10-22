@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync } from 'node:fs'
-import { GROUPS, LABS, LESSON_LABS, labAt } from './index.ts'
+import { GROUPS, LABS, LESSON_LABS, labAt, labLesson } from './index.ts'
 
 test('every lab has a unique id, a known group and text in both modes', () => {
   assert.equal(new Set(LABS.map((l) => l.id)).size, LABS.length)
@@ -15,6 +15,19 @@ test('every lab has a unique id, a known group and text in both modes', () => {
 test('every lesson link points at a real lab', () => {
   const ids = new Set(LABS.map((l) => l.id))
   for (const [n, list] of Object.entries(LESSON_LABS)) for (const id of list) assert.ok(ids.has(id), `lesson ${n}: ${id}`)
+})
+
+test('labs run in course order: groups as listed, Foundations first', () => {
+  assert.equal(GROUPS[0], 'Foundations')
+  const order = LABS.map((l) => GROUPS.indexOf(l.group))
+  assert.deepEqual(order, [...order].sort((a, b) => a - b))
+})
+
+test('every lab goes with the first lesson that lists it', () => {
+  for (const l of LABS) assert.ok(labLesson(l.id) != null, l.id)
+  assert.equal(labLesson('core-xray'), 2)
+  assert.equal(labLesson('packets'), 13)
+  assert.equal(labLesson('nope'), null)
 })
 
 test('labAt reads #labs/<id> and nothing else', () => {

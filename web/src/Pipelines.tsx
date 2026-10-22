@@ -32,7 +32,8 @@ export function useTokens<K extends string>(names: readonly K[]) {
   }
 }
 
-export type Stage = { label: string; plain?: string; sub?: string }
+/** plainSub replaces sub in Simple mode; an empty string hides it. */
+export type Stage = { label: string; plain?: string; sub?: string; plainSub?: string }
 /** How the signal looks between stages: sound, light, picture frames or a compressed bitstream. */
 export type Flow = 'wave' | 'frames' | 'bits' | 'light'
 
@@ -128,7 +129,7 @@ export function SignalPath({ stages, live, flow, level = 0.7, color = 'accent', 
         {stages.map((st) => (
           <li key={st.label} className="sp-stage">
             <span className="sp-name">{simple && st.plain ? st.plain : st.label}</span>
-            {st.sub && <span className="sp-sub">{st.sub}</span>}
+            {(simple ? (st.plainSub ?? st.sub) : st.sub) && <span className="sp-sub">{simple ? (st.plainSub ?? st.sub) : st.sub}</span>}
           </li>
         ))}
       </ol>
@@ -179,8 +180,8 @@ export function SensorPaths({ s }: { s: Sample }) {
           flow="wave"
           stages={[
             { label: 'App', sub: 'samples' },
-            { label: 'Core Audio', plain: 'Sound mixer', sub: 'mix, 48 kHz' },
-            { label: 'DAC + amp', plain: 'Numbers to voltage', sub: 'smart amps' },
+            { label: 'Core Audio', plain: 'Sound mixer', sub: 'mix, 48 kHz', plainSub: 'mixes every app' },
+            { label: 'DAC + amp', plain: 'Numbers to voltage', sub: 'smart amps', plainSub: 'makes it loud' },
             { label: 'Speakers', sub: '2 woofers, 2 tweeters' },
           ]}
         />
@@ -198,7 +199,7 @@ export function SensorPaths({ s }: { s: Sample }) {
           color="mic"
           stages={[
             { label: '3 mics', plain: 'Three mics', sub: 'left of the hinge' },
-            { label: 'ADC', plain: 'Voltage to numbers', sub: 'digital mics' },
+            { label: 'ADC', plain: 'Voltage to numbers', sub: 'digital mics', plainSub: '' },
             { label: 'Beamforming', plain: 'Focus on your voice', sub: 'in software' },
             { label: 'App', sub: 'call, dictation' },
           ]}
@@ -220,9 +221,9 @@ export function SensorPaths({ s }: { s: Sample }) {
           flow="frames"
           color="cam"
           stages={[
-            { label: 'Sensor', plain: 'Camera', sub: '12 MP, in the notch' },
-            { label: 'ISP', plain: 'Photo cleanup', sub: m.ispGBs == null ? 'on the chip' : `on the chip, ${gbs(m.ispGBs)}` },
-            { label: 'Frames in memory', plain: 'Desk Space', sub: 'unified' },
+            { label: 'Sensor', plain: 'Camera', sub: '12 MP, in the notch', plainSub: 'in the notch' },
+            { label: 'ISP', plain: 'Photo cleanup', sub: m.ispGBs == null ? 'on the chip' : `on the chip, ${gbs(m.ispGBs)}`, plainSub: 'on the chip' },
+            { label: 'Frames in memory', plain: 'Desk Space', sub: 'unified', plainSub: 'waits here' },
             { label: 'App', sub: 'green light on' },
           ]}
         />
@@ -241,9 +242,9 @@ export function SensorPaths({ s }: { s: Sample }) {
           level={bright ?? 0}
           flow="light"
           stages={[
-            { label: 'GPU', plain: 'Drawing pictures', sub: 'window buffers' },
-            { label: 'Display engine', plain: 'Screen sender', sub: 'layers, scaling' },
-            { label: 'Panel', plain: 'Screen', sub: '2560 x 1664' },
+            { label: 'GPU', plain: 'Drawing pictures', sub: 'window buffers', plainSub: 'every window' },
+            { label: 'Display engine', plain: 'Screen sender', sub: 'layers, scaling', plainSub: 'stacks the windows' },
+            { label: 'Panel', plain: 'Screen', sub: '2560 x 1664', plainSub: 'millions of dots' },
             { label: 'Backlight', plain: 'Light behind it', sub: bright == null ? NA : `${Math.round(bright * 100)}%` },
           ]}
         />
@@ -260,7 +261,8 @@ export function MediaEngineCard({ s }: { s: Sample }) {
   const enc = busy(m.encodeGBs)
   const known = m.decodeGBs != null || m.encodeGBs != null
   const level = (v: number | null) => Math.min(1, (v ?? 0) / 3)
-  const line = (what: string, v: number | null, on: boolean | null) => (v == null ? `${what}: n/a.` : on ? `${what}: ${gbs(v)} through memory.` : `${what}: idle.`)
+  const line = (what: string, v: number | null, on: boolean | null) =>
+    v == null ? `${what}: n/a.` : on ? `${what}: ${simple ? 'working' : `${gbs(v)} through memory`}.` : `${what}: idle.`
   return (
     <div className="card span-2 media-card">
       <h3>
@@ -284,10 +286,10 @@ export function MediaEngineCard({ s }: { s: Sample }) {
           level={level(m.decodeGBs)}
           flow="bits"
           stages={[
-            { label: 'Bitstream', plain: 'Squeezed video', sub: 'H.264 · HEVC · AV1' },
-            { label: 'Decoder', plain: 'Unsqueeze', sub: m.decodeGBs == null ? 'media engine' : gbs(m.decodeGBs) },
-            { label: 'Frames in memory', plain: 'Desk Space', sub: m.scalerGBs == null ? 'unified' : `scaler ${gbs(m.scalerGBs)}` },
-            { label: 'Display engine', plain: 'Screen sender', sub: 'or the GPU' },
+            { label: 'Bitstream', plain: 'Squeezed video', sub: 'H.264 · HEVC · AV1', plainSub: 'a video file' },
+            { label: 'Decoder', plain: 'Unsqueeze', sub: m.decodeGBs == null ? 'media engine' : gbs(m.decodeGBs), plainSub: '' },
+            { label: 'Frames in memory', plain: 'Desk Space', sub: m.scalerGBs == null ? 'unified' : `scaler ${gbs(m.scalerGBs)}`, plainSub: 'waits here' },
+            { label: 'Display engine', plain: 'Screen sender', sub: 'or the GPU', plainSub: '' },
           ]}
         />
       </div>
@@ -304,9 +306,9 @@ export function MediaEngineCard({ s }: { s: Sample }) {
           flow="frames"
           color="accent-alt"
           stages={[
-            { label: 'Camera or screen', plain: 'Camera or screen', sub: m.ispGBs != null && busy(m.ispGBs) ? `ISP ${gbs(m.ispGBs)}` : 'raw frames' },
-            { label: 'Encoder', plain: 'Squeeze', sub: m.encodeGBs == null ? 'media engine' : gbs(m.encodeGBs) },
-            { label: 'Bitstream', plain: 'Squeezed video', sub: 'HEVC · H.264 · ProRes' },
+            { label: 'Camera or screen', plain: 'Camera or screen', sub: m.ispGBs != null && busy(m.ispGBs) ? `ISP ${gbs(m.ispGBs)}` : 'raw frames', plainSub: 'every picture' },
+            { label: 'Encoder', plain: 'Squeeze', sub: m.encodeGBs == null ? 'media engine' : gbs(m.encodeGBs), plainSub: '' },
+            { label: 'Bitstream', plain: 'Squeezed video', sub: 'HEVC · H.264 · ProRes', plainSub: 'a smaller file' },
             { label: 'SSD or network', plain: 'Saved or sent', sub: 'file or call' },
           ]}
         />
@@ -485,8 +487,8 @@ export function IoPaths({ s }: { s: Sample }) {
           stages={[
             { label: 'Router', plain: 'Your router', sub: 'radio waves' },
             { label: 'Antennas', plain: 'Antennas', sub: 'behind the hinge' },
-            { label: 'Wi-Fi chip', plain: 'Radio chip', sub: 'N1, Wi-Fi 7' },
-            { label: 'Kernel → app', plain: 'macOS → app', sub: `down ${rate(s.net.rxBps)}` },
+            { label: 'Wi-Fi chip', plain: 'Radio chip', sub: 'N1, Wi-Fi 7', plainSub: 'waves into data' },
+            { label: 'Kernel → app', plain: 'macOS → app', sub: `down ${rate(s.net.rxBps)}`, plainSub: `downloading ${rate(s.net.rxBps)}` },
           ]}
         />
       </PathCard>
@@ -505,9 +507,9 @@ export function IoPaths({ s }: { s: Sample }) {
           color="accent-alt"
           stages={[
             { label: 'App', sub: 'save, open' },
-            { label: 'APFS', plain: 'File system', sub: 'files to blocks' },
+            { label: 'APFS', plain: 'File system', sub: 'files to blocks', plainSub: 'keeps track of files' },
             { label: 'Controller + AES', plain: 'Lock and sort', sub: 'inside the chip' },
-            { label: 'NAND', plain: 'Storage chips', sub: `write ${rate(s.disk.writeBps)}` },
+            { label: 'NAND', plain: 'Storage chips', sub: `write ${rate(s.disk.writeBps)}`, plainSub: `saving ${rate(s.disk.writeBps)}` },
           ]}
         />
       </PathCard>
@@ -542,7 +544,7 @@ export function SwapPath({ s, history }: { s: Sample; history: Sample[] }) {
         stages={[
           { label: 'App pages', plain: 'Desk Space', sub: `${memGB(m.appBytes ?? m.activeBytes)} in use` },
           { label: 'Compressor', plain: 'Squeeze', sub: `${memGB(m.compressedBytes)} squeezed` },
-          { label: 'Swap files', plain: 'Overflow Storage', sub: m.swapUsedBytes > 0 ? `${memGB(m.swapUsedBytes)} on SSD` : 'empty' },
+          { label: 'Swap files', plain: 'Overflow Storage', sub: m.swapUsedBytes > 0 ? `${memGB(m.swapUsedBytes)} on SSD` : 'empty', plainSub: m.swapUsedBytes > 0 ? `${memGB(m.swapUsedBytes)} moved here` : 'empty' },
           { label: 'Back in use', plain: 'Brought back', sub: 'when touched' },
         ]}
       />

@@ -1378,7 +1378,7 @@ export const TOPICS: Record<string, Topic> = {
       {
         h: 'The number',
         p: [
-          "The gauge tracks the pack's present full charge capacity in milliamp-hours. Health is that divided by the design capacity. A new pack can read a little over 100%, because cells leave the factory with some spread; the panel then shows 100% with the raw figure beside it.",
+          "The gauge keeps a nominal full charge capacity in milliamp-hours, a smoothed estimate of what the pack holds today. Health is that divided by the design capacity, the same sum System Settings uses for Maximum Capacity. A new pack can read a little over 100%, because cells leave the factory with some spread; like System Settings, the panel then shows 100%, with the raw figure beside it.",
         ],
       },
       {
@@ -1393,10 +1393,10 @@ export const TOPICS: Record<string, Topic> = {
       },
       {
         h: 'Why it can differ from System Settings',
-        p: ['System Settings shows a Maximum Capacity that macOS computes its own way and rounds. The reader uses the raw maximum capacity, so the two can differ slightly.'],
+        p: ['The gauge also keeps a raw maximum capacity (`AppleRawMaxCapacity`). It moves with temperature and charge level and often reads 3 to 6 points below the nominal figure, which is why tools such as coconutBattery can show 94% on a Mac whose System Settings says 99%. SiliconSight reads the nominal figure, so it should match System Settings to within rounding.'],
       },
     ],
-    source: '`AppleRawMaxCapacity` (or `FullChargeCapacity`) divided by `DesignCapacity`, from `AppleSmartBattery`.',
+    source: '`NominalChargeCapacity` divided by `DesignCapacity`, from `AppleSmartBattery` (falls back to `AppleRawMaxCapacity` on Macs that lack the nominal figure).',
     sources: [cite(R.cycles, '80% at the maximum cycle count, and 1000 cycles for Apple silicon Airs.'), cite(R.bu808, 'How heat and high charge age lithium cells.')],
     related: ['cycles', 'battery', 'charge-held'],
     now: ({ s }) => {

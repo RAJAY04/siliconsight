@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { Sources, type LabProps, type Source } from '../labs/kit.tsx'
-import { Unavailable, readBest, saveBest } from './kit.tsx'
+import { HowTo, Unavailable, readBest, saveBest } from './kit.tsx'
 import { InfoButton } from '../Learn.tsx'
 import { useSimple } from '../simple.ts'
 import { watts } from '../format.ts'
@@ -151,18 +151,14 @@ export default function Watts({ s, history, demo }: LabProps) {
       </div>
 
       {g.phase === 'idle' && (
-        <div className="watts-intro">
-          <p>
-            {simple
-              ? `Five things to do with this Mac. Before each one, guess how much power the whole Mac will use while you do it. Then do it for ${WINDOW_S} seconds while the reader measures. The closer your guess, the more points.`
-              : `Five real actions. Before each, guess the whole Mac's power draw in watts, then do it for ${WINDOW_S} seconds while the reader measures. Closeness is scored as a ratio, so 2 W off at idle costs as much as 10 W off under heavy load.`}
-          </p>
-          <ol className="watts-list">
-            {TASKS.map((t) => (
-              <li key={t.id}>{simple ? t.plain : t.name}</li>
-            ))}
-          </ol>
-        </div>
+        <HowTo
+          steps={[
+            `Press Start. You get ${TASKS.length} small tasks, one at a time, such as watching a video.`,
+            'Before each task, drag the slider to guess how many watts the whole Mac will use while you do it.',
+            `Press Measure, then do the task for ${WINDOW_S} seconds while the reader watches the power meters.`,
+            'See the real number. The closer your guess, the more points.',
+          ]}
+        />
       )}
 
       {inRound && (
@@ -263,7 +259,7 @@ export default function Watts({ s, history, demo }: LabProps) {
         )}
         {g.phase === 'guess' && (
           <button type="button" className="game-go" onClick={measure}>
-            {simple ? `Lock it in and measure` : `Lock guess, measure ${WINDOW_S} s`}
+            Measure
           </button>
         )}
         {g.phase === 'reveal' && (

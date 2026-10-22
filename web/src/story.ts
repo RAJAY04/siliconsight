@@ -181,9 +181,15 @@ function cpuStory(win: Sample[], history: Sample[], p: number, e: number, gpu: n
 }
 
 /** One plain sentence for the chip view, driven by which cluster is busy now. */
-export function chipLine(s: Sample, hw: Hardware): string {
+export function chipLine(s: Sample, hw: Hardware, simple = false): string {
   const p = clusterAvg(s, 'P') ?? 0
   const e = clusterAvg(s, 'E') ?? 0
+  if (simple) {
+    if (p > 0.5) return 'Something big is running. The Fast Workers are doing most of the work while the Eco Workers keep small jobs going.'
+    if (e > 0.25 && p < 0.15) return 'Small background jobs are on the Eco Workers. The Fast Workers are resting until something big comes along.'
+    if (p < 0.1 && e < 0.25) return 'Almost nothing is happening. The Eco Workers handle the little bits and the Fast Workers sleep.'
+    return 'Both kinds of workers are sharing the job. Small tasks go to the Eco Workers and big ones to the Fast Workers.'
+  }
   const E = `${hw.eCores} efficiency cores`
   const P = `${hw.pCores} performance cores`
   if (p > 0.5) return `A heavy burst is running. The ${P} are awake and doing most of the work while the ${E} keep background jobs going.`

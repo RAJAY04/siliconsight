@@ -56,7 +56,7 @@ type Sample = {
     percent: number; charging: boolean; acAttached: boolean;
     watts: number | null;        // + into battery, - out of battery
     adapterW: number | null;     // charger rating
-    cycleCount: number | null; healthPct: number | null;  // max/design capacity
+    cycleCount: number | null; healthPct: number | null;  // NominalChargeCapacity/DesignCapacity, as System Settings
     timeRemainingMin: number | null;
     chargeHeld: boolean;         // on AC, not charging, below 100 (optimized / limit)
   };

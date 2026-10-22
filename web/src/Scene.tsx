@@ -220,6 +220,7 @@ const BottomCase = memo(function BottomCase({ g }: { g: Geometry }) {
 })
 
 const BoardStatic = memo(function BoardStatic({ g, chipShort, pCores, eCores, gpuCores, aneCores }: { g: Geometry; chipShort: string; pCores: number; eCores: number; gpuCores: number | null; aneCores: number | null }) {
+  const simple = useSimple()
   const ant = box(g.L.antennas)
   const jack = box(g.L.jack)
   return (
@@ -286,11 +287,11 @@ const BoardStatic = memo(function BoardStatic({ g, chipShort, pCores, eCores, gp
       </g>
       <rect x={g.NAND.x} y={g.NAND.y} width={g.NAND.w} height={g.NAND.h} rx="2.5" fill="var(--chip)" stroke="var(--chip-edge)" />
       <text x={g.NAND.x + g.NAND.w / 2} y={g.NAND.y + g.NAND.h - 5} className="etch" textAnchor="middle">
-        NAND
+        {simple ? 'Storage' : 'NAND'}
       </text>
       <rect x={g.WIFI.x} y={g.WIFI.y} width={g.WIFI.w} height={g.WIFI.h} rx="2.5" fill="url(#can)" stroke="var(--chip-edge)" />
       <text x={g.WIFI.x + g.WIFI.w / 2} y={g.WIFI.y + g.WIFI.h / 2 + 2.5} className="etch" textAnchor="middle">
-        N1
+        {simple ? 'Radio' : 'N1'}
       </text>
       <rect x={g.CONN.x} y={g.CONN.y} width={g.CONN.w} height={g.CONN.h} rx="2" fill="var(--port)" stroke="var(--chip-edge)" />
       {/* SoC package: die toward the hinge, two DRAM packages in front of it on one substrate. */}
@@ -299,7 +300,7 @@ const BoardStatic = memo(function BoardStatic({ g, chipShort, pCores, eCores, gp
         <g key={i}>
           <rect x={r.x} y={r.y} width={r.w} height={r.h} rx="2.5" fill="var(--chip)" stroke="var(--chip-edge)" />
           <text x={r.x + r.w / 2} y={r.y + r.h - 4} className="etch small" textAnchor="middle">
-            LPDDR5X
+            {simple ? 'Desk Space' : 'LPDDR5X'}
           </text>
         </g>
       ))}

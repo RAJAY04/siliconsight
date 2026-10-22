@@ -15,11 +15,12 @@ export type LabMeta = {
   Lab: ComponentType<LabProps>
 }
 
-export const GROUPS = ['Memory', 'Processor', 'Apps and storage', 'Talking to the world', 'Foundations'] as const
+/** Course order: the groups follow the lessons, from bits up to the network. */
+export const GROUPS = ['Foundations', 'Processor', 'Memory', 'Apps and storage', 'Talking to the world'] as const
 export type Group = (typeof GROUPS)[number]
 
-/** Every lab, in the order the index lists them. Each loads only when opened. */
-export const LABS: LabMeta[] = [
+/** Every lab, sorted into course order below. Each loads only when opened. */
+const ALL: LabMeta[] = [
   {
     id: 'virtual-memory',
     title: 'Virtual memory',
@@ -154,6 +155,8 @@ export const LABS: LabMeta[] = [
   },
 ]
 
+export const LABS = [...ALL].sort((a, b) => GROUPS.indexOf(a.group) - GROUPS.indexOf(b.group))
+
 export const labAt = (hash: string): LabMeta | null => {
   const m = /^#?labs\/([\w-]+)$/.exec(hash)
   return (m && LABS.find((l) => l.id === m[1])) || null
@@ -173,4 +176,13 @@ export const LESSON_LABS: Record<number, string[]> = {
   11: ['ssd-flash', 'app-launch'],
   13: ['packets'],
   15: ['app-launch'],
+}
+
+/** The first lesson that lists a lab, so a lab page can point back into the course. */
+export function labLesson(id: string): number | null {
+  const n = Object.keys(LESSON_LABS)
+    .map(Number)
+    .sort((a, b) => a - b)
+    .find((k) => LESSON_LABS[k].includes(id))
+  return n ?? null
 }

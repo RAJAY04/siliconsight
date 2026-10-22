@@ -249,7 +249,7 @@ function Panel({ i, t, app, mode, simple }: { i: number; t: number; app: App; mo
             {simple ? 'Memory map' : 'New address space'}
           </text>
           <text className="al-small al-muted" x={x0 + 206} y={P.y + 52}>
-            {simple ? 'App file on the SSD' : 'Files on the SSD'}
+            {simple ? 'App file in storage' : 'Files on the SSD'}
           </text>
           {segs.map((sg, n) => {
             const y = P.y + 62 + n * 34
@@ -272,7 +272,7 @@ function Panel({ i, t, app, mode, simple }: { i: number; t: number; app: App; mo
               </g>
             )
           })}
-          {line(284, simple ? 'Linked up, but nothing copied off the SSD yet.' : 'Mapped, not read: no page is in RAM yet.', 'al-small al-accent', appear(6))}
+          {line(284, simple ? 'Linked up, but nothing copied off the storage drive yet.' : 'Mapped, not read: no page is in RAM yet.', 'al-small al-accent', appear(6))}
         </g>
       )
     }
@@ -414,7 +414,7 @@ function Panel({ i, t, app, mode, simple }: { i: number; t: number; app: App; mo
             })}
           {line(
             300,
-            warm ? (simple ? 'Same pieces, no trip to the SSD.' : 'Same faults, no disk reads: cache hits.') : simple ? 'Each piece comes off the SSD once.' : 'Each fault here is a page-in, counted above.',
+            warm ? (simple ? 'Same pieces, no trip to the storage drive.' : 'Same faults, no disk reads: cache hits.') : simple ? 'Each piece comes off the storage drive once.' : 'Each fault here is a page-in, counted above.',
             `al-small ${warm ? 'al-ok' : 'al-accent'}`,
           )}
         </g>
@@ -597,7 +597,7 @@ function Watcher({ s, history, demo }: { s: LabProps['s']; history: LabProps['hi
   const show = (x: Watch) => (
     <dl className="al-watch">
       <div>
-        <dt>{simple ? 'Fetched from SSD' : 'Paged in from files'}</dt>
+        <dt>{simple ? 'Fetched from storage' : 'Paged in from files'}</dt>
         <dd className="num">{x.pageinBytes == null ? 'n/a' : bytes(x.pageinBytes)}</dd>
       </div>
       <div>
@@ -605,7 +605,7 @@ function Watcher({ s, history, demo }: { s: LabProps['s']; history: LabProps['hi
         <dd className="num">{x.peakPageins == null ? 'n/a' : `${num(x.peakPageins)}/s`}</dd>
       </div>
       <div>
-        <dt>{simple ? 'Fastest SSD reading' : 'Peak disk reads'}</dt>
+        <dt>{simple ? 'Fastest storage reading' : 'Peak disk reads'}</dt>
         <dd className="num">{rate(x.peakReadBps)}</dd>
       </div>
       <div>
@@ -619,7 +619,7 @@ function Watcher({ s, history, demo }: { s: LabProps['s']; history: LabProps['hi
       <h3>{simple ? 'Try it: open a real app and watch' : 'Try it: watch a real launch'}</h3>
       <p className="fine">
         {simple
-          ? 'Pick a big app you have not opened since you last restarted the Mac. Press Start, open the app, wait until its window is up, then press Stop. Then quit the app, press Start again and reopen it. The second time is a warm launch, and far less should come off the SSD.'
+          ? 'Pick a big app you have not opened since you last restarted the Mac. Press Start, open the app, wait until its window is up, then press Stop. Then quit the app, press Start again and reopen it. The second time is a warm launch, and far less should come off the storage drive.'
           : "Pick a big app you haven't opened since boot. Press Start, open the app, wait for its first window, then Stop. Quit it and repeat for a warm launch: page-ins should drop sharply the second time, because the app's pages are still in the page cache."}
       </p>
       {s.paging == null && <p className="fine">This reader sends no paging counters, so only disk reads and new processes will show. Pull the repo and run ./run.sh again.</p>}
@@ -790,13 +790,13 @@ export default function AppLaunch({ s, history, demo }: LabProps) {
         demo={demo}
         note={
           simple
-            ? 'Try it: open a big app you have not used since the Mac restarted, and watch "Fetched from SSD" jump and the app climb the Desk Space list.'
+            ? 'Try it: open a big app you have not used since the Mac restarted, and watch "Fetched from storage" jump and the app climb the Desk Space list.'
             : "Try it: open a big app you haven't opened since boot, and watch page-ins spike and the new process climb to the top of the memory list."
         }
       >
-        <LiveStat label={simple ? 'SSD reads' : 'Disk reads'} value={rate(s.disk.readBps)} sub={<Sparkline values={history.map((x) => x.disk.readBps)} w={90} h={18} label="Disk reads over the last minutes" />} />
+        <LiveStat label={simple ? 'Storage reads' : 'Disk reads'} value={rate(s.disk.readBps)} sub={<Sparkline values={history.map((x) => x.disk.readBps)} w={90} h={18} label="Disk reads over the last minutes" />} />
         <LiveStat
-          label={simple ? 'Fetched from SSD' : 'Page-ins'}
+          label={simple ? 'Fetched from storage' : 'Page-ins'}
           value={pg?.pageins == null ? 'n/a' : `${num(pg.pageins)}/s`}
           sub={pg?.pageins != null && pageBytes != null ? <>{bytes(pg.pageins * pageBytes)}/s <Sparkline values={pageins} w={60} h={18} label="Page-ins over the last minutes" /></> : undefined}
           hot={(pg?.pageins ?? 0) > 2000}

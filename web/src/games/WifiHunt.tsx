@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { Sources, type LabProps, type Source } from '../labs/kit.tsx'
-import { Unavailable, readBest, saveBest } from './kit.tsx'
+import { HowTo, Unavailable, readBest, saveBest } from './kit.tsx'
 import { InfoButton } from '../Learn.tsx'
 import { useSimple } from '../simple.ts'
 import type { WiFi } from '../types.ts'
@@ -194,11 +194,17 @@ export default function WifiHunt({ s, demo }: LabProps) {
         </div>
       )}
 
+      {g.phase === 'idle' && (
+        <HowTo
+          steps={[
+            `Press Start. You have ${HUNT_S} seconds.`,
+            demo ? 'Drag the laptop around the flat, or click it and use the arrow keys.' : 'Pick up the Mac and walk around: other rooms, corners, closer to the router.',
+            'The gauge shows the Wi-Fi signal once a second. Further right means a stronger signal.',
+            'You score the signal you gain over where you started.',
+          ]}
+        />
+      )}
       <p className="game-goal">
-        {g.phase === 'idle' &&
-          (demo
-            ? `${HUNT_S} seconds. Drag the laptop around the flat, or focus it and use the arrow keys, to find the strongest signal. Your score is how many dB you gain over where you started.`
-            : `${HUNT_S} seconds. Pick up the Mac and walk around: rooms, corners, near the router, behind the fridge. The page updates once a second. Your score is how many dB you gain over where you started.`)}
         {g.phase === 'hunt' && (
           <>
             {simple ? 'Started at ' : 'Start '}
@@ -250,7 +256,7 @@ export default function WifiHunt({ s, demo }: LabProps) {
       <div className="game-actions">
         {g.phase !== 'hunt' && (
           <button type="button" className="game-go" onClick={start} disabled={now == null}>
-            {g.phase === 'done' ? 'Hunt again' : 'Start the hunt'}
+            {g.phase === 'done' ? 'Hunt again' : 'Start'}
           </button>
         )}
         {g.phase === 'hunt' && (

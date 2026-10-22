@@ -80,7 +80,7 @@ function ProgScene({ t }: { t: number }) {
         {'    s += a[i];'}
       </text>
       <text className="pl-head" x={30} y={140}>
-        {simple ? 'What the core actually runs' : 'ARM64, as clang -O1 compiles it on this Mac'}
+        {simple ? 'What the worker actually runs' : 'ARM64, as clang -O1 compiles it on this Mac'}
       </text>
       <rect className="pl-code" x={30} y={152} width={420} height={250} rx={10} />
       <text className="pl-mono pl-label" x={46} y={180}>
@@ -99,7 +99,7 @@ function ProgScene({ t }: { t: number }) {
       ))}
       <path className={`pl-back ${pc === 3 && !regs.z ? 'on' : ''}`} d="M 434 362 C 462 362, 462 214, 434 214" markerEnd="url(#pl-arrow)" />
       <text className="pl-fine" x={30} y={430}>
-        {simple ? 'Each line is one instruction: 4 bytes the core reads, works out, and does.' : 'Every A64 instruction is 4 bytes, so the loop body is 16 bytes.'}
+        {simple ? 'Each line is one instruction: 4 bytes the worker reads, works out, and does.' : 'Every A64 instruction is 4 bytes, so the loop body is 16 bytes.'}
       </text>
 
       <text className="pl-head" x={500} y={36}>
@@ -674,7 +674,7 @@ export default function Pipeline({ hw, s, history, demo }: LabProps) {
       ),
     },
     {
-      title: simple ? 'A wrong guess in a big core' : 'Misprediction in a wide core',
+      title: simple ? 'A wrong guess in a Fast Worker' : 'Misprediction in a wide core',
       dur: coreDur('flush'),
       tech: (
         <p>

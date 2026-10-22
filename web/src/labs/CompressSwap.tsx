@@ -145,7 +145,7 @@ function frame(i: number, t: number, simple: boolean, r: number): Frame {
     case 1:
       for (let n = 0; n < 10; n++) if (t >= 0.3 + n * 0.12 && t < 0.6 + n * 0.12) out.hot.push(28 + n)
       for (let n = 0; n < 10; n++) drop(28 + n, 2.5 + n * 0.3)
-      if (t >= 0.3 && t < 3) out.kernel = simple ? 'These are spare copies of files. The originals are on the SSD, so macOS just clears them.' : 'Clean file-backed pages: the SSD already has the data, so the kernel frees them with no write.'
+      if (t >= 0.3 && t < 3) out.kernel = simple ? 'These are spare copies of files. The originals are on the storage drive, so macOS just clears them.' : 'Clean file-backed pages: the SSD already has the data, so the kernel frees them with no write.'
       else if (t >= 3) out.kernel = simple ? 'Xcode takes the cleared spots. The desk is full again.' : 'Xcode takes the reclaimed frames. Free is back to zero, and so is the file cache.'
       break
     case 2:
@@ -194,7 +194,7 @@ function frame(i: number, t: number, simple: boolean, r: number): Frame {
       if (t >= 1.8 && t < 3.8)
         out.tokens.push({ at: along([[SEG_X + SEG_W / 2, SEG_Y[0] + 13], [696, SEG_Y[0] + 13], [696, SWAPFILE_Y(0) + 12], [SSD.x + 148, SWAPFILE_Y(0) + 12]], phase(t, 1.8, 3.8)), label: simple ? 'locked bundle' : 'segment 1', cls: 'seg', w: 110 })
       if (t >= 0.6 && t < 1.8) out.kernel = simple ? 'The oldest bundle gets locked with a key only this Mac knows.' : 'The oldest segment is encrypted with AES-XTS before it leaves RAM (vm_swap_encrypt).'
-      else if (t >= 1.8) out.kernel = simple ? 'Then it goes to Overflow Storage on the SSD, and spot 27 is free.' : 'Written to a swap file in /System/Volumes/VM. Frame 27 is free again.'
+      else if (t >= 1.8) out.kernel = simple ? 'Then it goes to Overflow Storage on the storage drive, and spot 27 is free.' : 'Written to a swap file in /System/Volumes/VM. Frame 27 is free again.'
       break
     case 5:
       if (t >= 0.1 && t < 0.7) out.fault.push(6)
@@ -207,7 +207,7 @@ function frame(i: number, t: number, simple: boolean, r: number): Frame {
       out.lock = t >= 4.8 ? 1 - phase(t, 4.8, 5.2) : 0
       if (t >= 5.3 && t < 6.3) out.tokens.push({ at: along([[SEG_X + 30, SEG_Y[0] + 13], [434, SEG_Y[0] + 13], [434, fc(7)[1]], fc(7)], phase(t, 5.3, 6.3)), label: '16 KB', cls: 'C', w: PAGE_W })
       if (t < 1.9) out.kernel = simple ? 'Safari needs its spot back. It is folded on the desk, so it is unfolded right away.' : 'Fault on a compressed page: decompress it from segment 2 into a free frame. CPU work, no I/O.'
-      else if (t < 5.3) out.kernel = simple ? 'Music needs a spot that went to Overflow Storage. It waits for the SSD.' : 'Fault on a swapped page: the whole segment is read back from the swap file, then decrypted.'
+      else if (t < 5.3) out.kernel = simple ? 'Music needs a spot that went to Overflow Storage. It waits for the storage drive.' : 'Fault on a swapped page: the whole segment is read back from the swap file, then decrypted.'
       else out.kernel = simple ? 'Unlocked, unfolded and back on the desk, much later than Safari.' : 'Then the page is decompressed into a frame. Only now can Music carry on.'
       break
     case 6:
@@ -722,7 +722,7 @@ export default function CompressSwap({ hw, s, history, demo }: LabProps) {
       ),
     },
     {
-      title: simple ? 'Getting a page back' : 'Faulting a page back in',
+      title: simple ? 'Getting a piece back' : 'Faulting a page back in',
       dur: 7,
       tech: (
         <p>
@@ -780,7 +780,7 @@ export default function CompressSwap({ hw, s, history, demo }: LabProps) {
         <LiveStat label={simple ? 'Unfolding' : 'Decompressions'} value={pg?.decompressions == null ? 'n/a' : `${Math.round(pg.decompressions).toLocaleString('en-US')}/s`} sub={simple ? 'papers taken back' : 'pages a second'} />
         <LiveStat label={simple ? 'Bundles' : 'Compressed'} value={memGB(m.compressedBytes)} sub={liveRatio == null ? 'ratio n/a' : `${num(liveRatio, 2)} to 1`} />
         <LiveStat label={simple ? 'Overflow Storage' : 'Swap used'} value={memGB(m.swapUsedBytes)} sub={<Sparkline values={swaps} w={90} h={18} label="Swap used over the last minutes" />} />
-        <LiveStat label={simple ? 'To and from SSD' : 'Swap out / in'} value={pg?.swapouts == null || pg.swapins == null ? 'n/a' : `${num(pg.swapouts)} / ${num(pg.swapins)}`} sub={pg?.swapouts == null || pg.swapins == null ? 'pages a second' : `${bytes((pg.swapouts + pg.swapins) * pg.pageBytes)}/s`} hot={(pg?.swapins ?? 0) > 100} />
+        <LiveStat label={simple ? 'To and from storage' : 'Swap out / in'} value={pg?.swapouts == null || pg.swapins == null ? 'n/a' : `${num(pg.swapouts)} / ${num(pg.swapins)}`} sub={pg?.swapouts == null || pg.swapins == null ? 'pages a second' : `${bytes((pg.swapouts + pg.swapins) * pg.pageBytes)}/s`} hot={(pg?.swapins ?? 0) > 100} />
         <LiveStat label={simple ? 'How hard it works' : 'Pressure'} value={simple ? PLAIN_LEVEL[level] : m.pressure} hot={m.pressure !== 'normal'} sub={`${memGB(m.freeBytes)} ${simple ? 'empty' : 'free'}`} />
       </LiveStrip>
 

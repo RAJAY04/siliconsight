@@ -115,6 +115,14 @@ test('chip line names the busy cluster with real counts', () => {
   assert.match(chipLine(sample(0.02, 0.4), demoHello.hardware), /^Background work stays on the 6 efficiency cores/)
 })
 
+test('the simple chip line uses the worker names and no cluster or core jargon', () => {
+  for (const [p, e] of [[0.9, 0.3], [0.02, 0.4], [0.02, 0.05], [0.3, 0.3]]) {
+    const line = chipLine(sample(p, e), demoHello.hardware, true)
+    assert.match(line, /Fast Workers/)
+    assert.doesNotMatch(line, /core|cluster|parked/i)
+  }
+})
+
 test('formatters never turn null into 0', () => {
   for (const f of [bytes, memGB, rate, watts, pct, minutes, mhz]) {
     assert.equal(f(null), NA)

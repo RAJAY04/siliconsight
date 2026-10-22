@@ -3,7 +3,7 @@ import type { LabProps } from '../labs/kit.tsx'
 import { memGB, num } from '../format.ts'
 import { useSimple } from '../simple.ts'
 import { InfoButton } from '../Learn.tsx'
-import { readBest, saveBest } from './kit.tsx'
+import { HowTo, readBest, saveBest } from './kit.tsx'
 import { GOALS, TIGHT, demoPoint, pointOf, round, type Event, type Goal, type MemPoint } from './fill-ram.ts'
 import { MAX_APPS } from '../labs/compress-sim.ts'
 import './FillRam.css'
@@ -139,33 +139,39 @@ export default function FillRam({ s, demo }: LabProps) {
           <span className="game-best">best {best.current ?? 'none yet'}</span>
         </span>
       </div>
-      <p className="game-goal">
-        {word(
-          'Push this Mac into memory pressure by opening real apps and tabs. Watch free memory vanish, the compressor grow and swap kick in. Each stage scores.',
-          'Fill up the desk by opening real apps and tabs. Watch the empty spots vanish, papers get folded and Overflow Storage start. Each stage scores.',
-        )}
-      </p>
+      {phase === 'idle' && (
+        <HowTo
+          steps={[
+            'Save your work in other apps, just in case.',
+            'Press Start.',
+            'Open lots of browser tabs and big apps you already have, such as Photos, a game or a video editor. Keep them all open.',
+            'Watch the bar fill up. Every goal in the list below that you reach scores points. Press Finish when you are done, then quit the apps you opened.',
+          ]}
+        />
+      )}
 
       <div className="fr-live">
         <MemBar p={now} simple={simple} />
-        <div className="fr-stats">
-          <div>
-            <span className="fr-label">{word('Pressure', 'How hard it works')}</span>
-            <span className={`badge pressure-${now.pressure}`}>{simple ? PLAIN_LEVEL[now.pressure] : now.pressure}</span>
+        {phase !== 'idle' && (
+          <div className="fr-stats">
+            <div>
+              <span className="fr-label">{word('Pressure', 'How hard it works')}</span>
+              <span className={`badge pressure-${now.pressure}`}>{simple ? PLAIN_LEVEL[now.pressure] : now.pressure}</span>
+            </div>
+            <div>
+              <span className="fr-label">{word('Compression ratio', 'Folding ratio')}</span>
+              <span className="num">{ratio == null ? 'n/a' : `${num(ratio, 2)} to 1`}</span>
+            </div>
+            <div>
+              <span className="fr-label">{word('Compressed since start', 'Folded since start')}</span>
+              <span className="num">{signed(now.compressed - base.compressed)}</span>
+            </div>
+            <div>
+              <span className="fr-label">{word('Swap since start', 'Overflow since start')}</span>
+              <span className="num">{signed(now.swap - base.swap)}</span>
+            </div>
           </div>
-          <div>
-            <span className="fr-label">{word('Compression ratio', 'Folding ratio')}</span>
-            <span className="num">{ratio == null ? 'n/a' : `${num(ratio, 2)} to 1`}</span>
-          </div>
-          <div>
-            <span className="fr-label">{word('Compressed since start', 'Folded since start')}</span>
-            <span className="num">{phase === 'idle' ? 'not started' : signed(now.compressed - base.compressed)}</span>
-          </div>
-          <div>
-            <span className="fr-label">{word('Swap since start', 'Overflow since start')}</span>
-            <span className="num">{phase === 'idle' ? 'not started' : signed(now.swap - base.swap)}</span>
-          </div>
-        </div>
+        )}
       </div>
 
       <ol className="fr-goals">
@@ -197,7 +203,7 @@ export default function FillRam({ s, demo }: LabProps) {
       <div className="game-actions">
         {phase === 'playing' ? (
           <button type="button" className="game-go" onClick={stop}>
-            Finish round
+            Finish
           </button>
         ) : (
           <button type="button" className="game-go" onClick={start}>
@@ -213,7 +219,7 @@ export default function FillRam({ s, demo }: LabProps) {
           {simple
             ? `At the most: ${PLAIN_LEVEL[r.peak.pressure]}, ${memGB(r.peak.compressed)} folded, ${memGB(r.peak.swap)} in Overflow Storage, ${memGB(r.peak.minFree)} empty at the lowest.`
             : `Peak: ${r.peak.pressure} pressure, ${memGB(r.peak.compressed)} compressed, ${memGB(r.peak.swap)} swap, ${memGB(r.peak.minFree)} free at the lowest.`}{' '}
-          {word('Now quit the apps you opened.', 'Now quit the apps you opened.')}
+          {'Now quit the apps you opened.'}
         </p>
       )}
 
@@ -237,7 +243,8 @@ export default function FillRam({ s, demo }: LabProps) {
         </section>
       )}
 
-      <div className="fr-help">
+      <details className="game-more fr-help">
+        <summary>Tips, and why this is safe</summary>
         <section>
           <h4>{word('How to fill it, for real', 'How to fill the desk')}</h4>
           <ul>
@@ -262,7 +269,7 @@ export default function FillRam({ s, demo }: LabProps) {
             )}
           </p>
         </section>
-      </div>
+      </details>
 
       <p className="fine game-how">
         {word(

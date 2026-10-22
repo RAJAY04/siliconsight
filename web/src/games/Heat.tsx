@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { Sources, type LabProps, type Source } from '../labs/kit.tsx'
-import { Unavailable, readBest, saveBest } from './kit.tsx'
+import { HowTo, Unavailable, readBest, saveBest } from './kit.tsx'
 import { InfoButton } from '../Learn.tsx'
 import { useSimple } from '../simple.ts'
 import { mhz, temp } from '../format.ts'
@@ -155,35 +155,46 @@ export default function Heat({ hw, s, demo }: LabProps) {
         </span>
       </div>
 
-      <div className="heat-readouts">
-        <Readout label={simple ? 'Chip heat' : 'CPU temperature'} value={temp(last?.tempC ?? s.thermal.cpuTempC)} />
-        <Readout label={simple ? 'Fast Worker speed' : 'P clock'} value={mhz(last?.pMHz ?? s.cpu.pFreqMHz)} />
-        <Readout label={simple ? 'How hard it is cooling' : 'Thermal state'} value={last?.state ?? s.thermal.state} tone={(last?.state ?? s.thermal.state) === 'nominal' ? '' : 'warm'} />
-        <Readout label="Fans" value={fans ? (last?.rpm ?? s.fans[0]?.rpm) != null ? `${Math.round((last?.rpm ?? s.fans[0]?.rpm)!)} rpm` : 'n/a' : 'none'} />
-        <Readout label={g.phase === 'cool' ? 'Cooling' : 'Load'} value={g.phase === 'run' ? `${Math.floor(t)} / ${LOAD_S} s` : g.phase === 'cool' ? `${Math.max(0, Math.ceil(COOL_S - (Date.now() - g.stopT) / 1000))} s left` : 'off'} tone={g.phase === 'run' ? 'hot' : ''} />
-      </div>
+      {g.phase !== 'idle' && (
+        <div className="heat-readouts">
+          <Readout label={simple ? 'Chip heat' : 'CPU temperature'} value={temp(last?.tempC ?? s.thermal.cpuTempC)} />
+          <Readout label={simple ? 'Fast Worker speed' : 'P clock'} value={mhz(last?.pMHz ?? s.cpu.pFreqMHz)} />
+          <Readout label={simple ? 'How hard it is cooling' : 'Thermal state'} value={last?.state ?? s.thermal.state} tone={(last?.state ?? s.thermal.state) === 'nominal' ? '' : 'warm'} />
+          <Readout label="Fans" value={fans ? (last?.rpm ?? s.fans[0]?.rpm) != null ? `${Math.round((last?.rpm ?? s.fans[0]?.rpm)!)} rpm` : 'n/a' : 'none'} />
+          <Readout label={g.phase === 'cool' ? 'Cooling' : 'Load'} value={g.phase === 'run' ? `${Math.floor(t)} / ${LOAD_S} s` : g.phase === 'cool' ? `${Math.max(0, Math.ceil(COOL_S - (Date.now() - g.stopT) / 1000))} s left` : 'off'} tone={g.phase === 'run' ? 'hot' : ''} />
+        </div>
+      )}
+
+      {g.phase === 'idle' && (
+        <HowTo
+          steps={[
+            `Use the slider under the chart to guess: how many seconds until ${fans ? 'the fans speed up' : 'the chip slows down to stay cool'}?`,
+            `Press Start. This page keeps the chip's cores busy for up to ${LOAD_S} seconds, which warms the Mac. You can stop it any time.`,
+            fans ? 'Watch the line on the chart. The game spots the moment the fans speed up.' : 'Watch the line on the chart. The game spots the moment the chip slows its fast cores to stay cool. That is called throttling.',
+            'The closer your guess, the more points.',
+          ]}
+        />
+      )}
 
       <HeatChart pts={shownPts} fans={fans} guess={g.phase === 'idle' ? (guess > LOAD_S ? null : guess) : g.guess} actual={g.phase === 'done' ? g.actual : null} stopAt={g.phase === 'idle' ? null : g.phase === 'run' ? Math.min(LOAD_S, t) : (g.stopT - g.startT) / 1000} />
 
       {g.phase === 'idle' && (
         <div className="heat-setup">
-          <p className="game-goal">
-            {simple
-              ? `This page will keep the workers busy for up to ${LOAD_S} seconds. Guess when ${event}.`
-              : `The page runs busy Web Workers for up to ${LOAD_S} s. Predict the second at which ${event}${fans ? ` (${FAN_RISE} rpm above where they started)` : ' below 90% of its peak under load'}.`}
-          </p>
           <label className="heat-slider">
             <span>
               {simple ? 'My guess' : 'Prediction'}: <b className="num">{guessText}</b>
             </span>
             <input type="range" min={3} max={NOT_SOON} step={1} value={guess} onChange={(e) => setGuess(Number(e.currentTarget.value))} aria-valuetext={guessText} />
           </label>
-          <label className="heat-slider">
-            <span>
-              {simple ? 'Busy workers' : 'Busy threads'}: <b className="num">{workers}</b> of {cores}
-            </span>
-            <input type="range" min={1} max={cores} step={1} value={workers} onChange={(e) => setWorkers(Number(e.currentTarget.value))} aria-valuetext={`${workers} of ${cores}`} />
-          </label>
+          <details className="game-more">
+            <summary>More options</summary>
+            <label className="heat-slider">
+              <span>
+                {simple ? 'Busy workers' : 'Busy threads'}: <b className="num">{workers}</b> of {cores}
+              </span>
+              <input type="range" min={1} max={cores} step={1} value={workers} onChange={(e) => setWorkers(Number(e.currentTarget.value))} aria-valuetext={`${workers} of ${cores}`} />
+            </label>
+          </details>
           {demo && (
             <div className="game-toggle" role="group" aria-label="Simulated Mac">
               <button type="button" aria-pressed={!simFans} onClick={() => setSimFans(false)}>
@@ -196,8 +207,8 @@ export default function Heat({ hw, s, demo }: LabProps) {
           )}
           <p className="fine">
             {simple
-              ? 'It warms the Mac and uses battery. You can stop it any time, and it stops by itself after a minute.'
-              : `Each thread is a Web Worker running an empty loop. It warms the Mac and uses battery; Stop, leaving this game, or ${LOAD_S} s ends it. A hard desk cools better than a lap.`}
+              ? 'Tip: a hard desk cools better than a lap, so play on a table.'
+              : `Each busy thread is a Web Worker running an empty loop. Stop, leaving this game, or ${LOAD_S} s ends it. A hard desk cools better than a lap.`}
           </p>
         </div>
       )}
@@ -215,7 +226,7 @@ export default function Heat({ hw, s, demo }: LabProps) {
       <div className="game-actions">
         {(g.phase === 'idle' || g.phase === 'done') && (
           <button type="button" className="game-go" onClick={start}>
-            {g.phase === 'done' ? 'Race again' : 'Start the load'}
+            {g.phase === 'done' ? 'Race again' : 'Start'}
           </button>
         )}
         {g.phase === 'run' && (

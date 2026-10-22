@@ -53,3 +53,14 @@ export function Unavailable({ title, children }: { title: string; children: Reac
 
 export const OLD_READER = 'This reader is older than the sensors update, so it sends no live sensor data. Pull the repo and run ./run.sh again to update it.'
 
+
+/** The numbered how-to-play list every game shows before the first round. */
+export function HowTo({ steps }: { steps: React.ReactNode[] }) {
+  return (
+    <ol className="game-steps">
+      {steps.map((step, i) => (
+        <li key={i}>{step}</li>
+      ))}
+    </ol>
+  )
+}

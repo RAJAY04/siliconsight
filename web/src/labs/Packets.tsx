@@ -389,7 +389,7 @@ function PacketBuilder() {
           <b className="num">{n(p.records)}</b> {simple ? 'locked boxes' : 'TLS records'}
         </span>
         <span>
-          <b className="num">{p.mss}</b> {simple ? 'bytes of message per packet, at most' : 'byte MSS'}
+          <b className="num">{p.mss}</b> {simple ? 'bytes of message per piece, at most' : 'byte MSS'}
         </span>
         <span>
           <b className="num">{bytes(p.headerBytes + p.tlsBytes)}</b> {simple ? 'of labels' : 'overhead'}

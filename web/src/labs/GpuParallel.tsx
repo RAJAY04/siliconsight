@@ -80,10 +80,10 @@ function CpuGpu({ t, pCores, eCores, gpuCores }: { t: number; pCores: number; eC
         )
       })}
       <text className="gp-head" x={480} y={40}>
-        {gpuCores == null ? (simple ? 'Graphics chip: core count unknown, 8 drawn' : 'GPU: core count not reported, 8 drawn') : simple ? `Graphics chip: ${n} cores` : `GPU: ${n} cores`}
+        {gpuCores == null ? (simple ? 'Graphics: worker count unknown, 8 drawn' : 'GPU: core count not reported, 8 drawn') : simple ? `Graphics: ${n} workers` : `GPU: ${n} cores`}
       </text>
       <text className="gp-note" x={480} y={60}>
-        {simple ? 'each core packed with simple helpers that do the same thing' : 'each core: many simple lanes, little control per lane'}
+        {simple ? 'each worker has a crew of simple helpers that all do the same thing' : 'each core: many simple lanes, little control per lane'}
       </text>
       {Array.from({ length: n }, (_, c) => {
         const x = 480 + (c % cols) * cw
@@ -108,7 +108,7 @@ function CpuGpu({ t, pCores, eCores, gpuCores }: { t: number; pCores: number; eC
           : 'A CPU core spends its transistors running one instruction stream fast. A GPU spends them on lanes, and keeps thousands of threads in flight.'}
       </text>
       <text className="gp-fine" x={30} y={522}>
-        {simple ? 'Apple says the M1 graphics chip can run nearly 25,000 threads at the same time.' : 'Apple: the M1 GPU runs nearly 25,000 threads simultaneously. Lanes drawn here are not to scale.'}
+        {simple ? 'Apple says the M1 graphics part can juggle nearly 25,000 jobs at the same time.' : 'Apple: the M1 GPU runs nearly 25,000 threads simultaneously. Lanes drawn here are not to scale.'}
       </text>
     </svg>
   )
@@ -466,7 +466,7 @@ function PaintRace({ gpuCores }: { gpuCores: number | null }) {
         </div>
         <label className="lab-field gp-range">
           <span>
-            {simple ? 'Graphics cores' : 'GPU cores'}: {cores}
+            {simple ? 'Graphics workers' : 'GPU cores'}: {cores}
             {gpuCores != null && cores === gpuCores ? ' (this Mac)' : ''}
           </span>
           <input type="range" min={1} max={40} value={cores} onChange={(e) => setCores(+e.currentTarget.value)} />
@@ -491,7 +491,7 @@ function PaintRace({ gpuCores }: { gpuCores: number | null }) {
         <figure>
           <canvas ref={gpuRef} width={PW} height={PH} className="gp-grid" role="img" aria-label={simple ? 'The graphics chip painting' : 'Parallel painter'} />
           <figcaption>
-            <b>{simple ? `${cores} graphics cores` : `${cores} cores x 32 lanes`}</b>: {doneCount(par.finish)} of {PW * PH} pixels, {simple ? 'needs' : 'total'} <span className="num">{par.total.toLocaleString('en-US')}</span> ticks
+            <b>{simple ? `${cores} graphics workers` : `${cores} cores x 32 lanes`}</b>: {doneCount(par.finish)} of {PW * PH} pixels, {simple ? 'needs' : 'total'} <span className="num">{par.total.toLocaleString('en-US')}</span> ticks
           </figcaption>
         </figure>
       </div>
@@ -665,7 +665,7 @@ export default function GpuParallel({ hw, s, history, demo }: LabProps) {
         <LiveStat label={simple ? 'Graphics chip busy' : 'GPU busy'} value={pct(s.gpu.usage)} sub={<Sparkline values={history.map((x) => x.gpu.usage)} max={1} w={90} h={18} label="GPU busy over the last minutes" />} hot={(s.gpu.usage ?? 0) > 0.5} />
         <LiveStat label={simple ? 'Graphics clock' : 'GPU clock'} value={gpuMhz(s.gpu.freqMHz)} sub={simple ? 'ticks per second' : 'gpu.freqMHz'} />
         <LiveStat label={simple ? 'Graphics power' : 'GPU power'} value={watts(s.power.gpuW)} sub={simple ? 'energy it uses right now' : 'power.gpuW'} />
-        <LiveStat label={simple ? 'Graphics cores' : 'GPU cores'} value={hw.gpuCores == null ? 'n/a' : String(hw.gpuCores)} sub={hw.gpuCores == null ? 'not reported' : simple ? 'teams of 32 run in each' : `${hw.chip}, SIMD width 32`} />
+        <LiveStat label={simple ? 'Graphics workers' : 'GPU cores'} value={hw.gpuCores == null ? 'n/a' : String(hw.gpuCores)} sub={hw.gpuCores == null ? 'not reported' : simple ? 'teams of 32 run in each' : `${hw.chip}, SIMD width 32`} />
       </LiveStrip>
 
       <section className="card lab-stage-card">

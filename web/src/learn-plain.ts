@@ -25,7 +25,7 @@ export const PLAIN: Record<string, Plain> = {
       },
       {
         h: 'Your M5',
-        p: ['The M5 has 4 Fast Workers, 6 Eco Workers, 8 or 10 graphics cores and a 16-core AI team. The drawing is a good guess at the layout, because Apple has not published a labelled photo of the chip.'],
+        p: ['The M5 has 4 Fast Workers, 6 Eco Workers, 8 or 10 graphics workers and an AI team of 16. The drawing is a good guess at the layout, because Apple has not published a labelled photo of the chip.'],
       },
     ],
   },
@@ -401,7 +401,7 @@ export const PLAIN: Record<string, Plain> = {
         h: 'Real life',
         p: [
           'Real speed is lower, around three quarters of that limit, because the highway is never perfectly full and the model also rereads the conversation so far.',
-          'Proof that the highway is the limit: an M3 with 10 graphics cores writes no faster than an M2 with 8, because both have the same Highway Speed.',
+          'Proof that the highway is the limit: an M3 with 10 graphics workers writes no faster than an M2 with 8, because both have the same Highway Speed.',
         ],
       },
       {
@@ -741,7 +741,7 @@ export const PLAIN: Record<string, Plain> = {
     sections: [
       {
         h: 'What the reader finds there',
-        p: ['The battery\'s charge and health, how much the drive has read and written, how many graphics cores there are, and which workers are Fast and which are Eco.'],
+        p: ['The battery\'s charge and health, how much the drive has read and written, how many graphics workers there are, and which workers are Fast and which are Eco.'],
       },
       {
         h: 'Try it',
@@ -846,7 +846,7 @@ const workers = (u: number | null) => (u == null ? 'not reported' : `${pct(u)} b
 export const PLAIN_NOW: Record<string, (x: Now) => string | null> = {
   soc: ({ hw, s }) => {
     const w = socW(s)
-    return `Your ${hw.chip} has ${hw.pCores} Fast Workers, ${hw.eCores} Eco Workers and ${hw.gpuCores ?? 'an unknown number of'} graphics cores. ${w == null ? 'This Mac does not say how much energy the chip uses.' : `Together they are using ${watts(w)} right now.`}`
+    return `Your ${hw.chip} has ${hw.pCores} Fast Workers, ${hw.eCores} Eco Workers and ${hw.gpuCores ?? 'an unknown number of'} graphics workers. ${w == null ? 'This Mac does not say how much energy the chip uses.' : `Together they are using ${watts(w)} right now.`}`
   },
   'p-cores': ({ hw, s }) => {
     const p = clusterAvg(s, 'P')
@@ -875,7 +875,7 @@ export const PLAIN_NOW: Record<string, (x: Now) => string | null> = {
     const bw = s.memory.bandwidthGBs
     if (bw == null) return 'This Mac does not say how fast data is moving on the Highway.'
     const peak = peakBandwidth(hw.chip)
-    return `Data is moving at ${num(bw)} GB/s on the Highway${peak ? `, ${pct(bw / peak)} of its top Highway Speed` : ''}.`
+    return `Data is moving at ${num(bw)} gigabytes a second on the Highway${peak ? `, ${pct(bw / peak)} of its top Highway Speed` : ''}.`
   },
   'memory-kinds': ({ s }) => {
     const m = s.memory

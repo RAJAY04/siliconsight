@@ -23,8 +23,10 @@ func readBattery() -> (battery: Any, tempC: Double?) {
     if let a = (p["InstantAmperage"] ?? p["Amperage"]) as? Int, let v = p["Voltage"] as? Int {
         watts = (Double(Int64(truncatingIfNeeded: a)) * Double(v) / 1e6 * 10).rounded() / 10
     }
+    // System Settings' Maximum Capacity is NominalChargeCapacity over DesignCapacity. The raw maximum
+    // swings with temperature and charge level and reads several points lower, so it is only a fallback.
     var health: Any = NSNull()
-    let full = (p["AppleRawMaxCapacity"] ?? data?["AppleRawMaxCapacity"] ?? data?["FullChargeCapacity"]) as? Int
+    let full = (p["NominalChargeCapacity"] ?? data?["NominalChargeCapacity"] ?? p["AppleRawMaxCapacity"] ?? data?["AppleRawMaxCapacity"] ?? data?["FullChargeCapacity"]) as? Int
     let design = (p["DesignCapacity"] ?? data?["DesignCapacity"]) as? Int
     if let full, let design, design > 0 { health = (Double(full) / Double(design) * 1000).rounded() / 10 }
 

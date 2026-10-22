@@ -1,23 +1,24 @@
 import { Suspense, lazy, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import type { LabProps } from './labs/kit.tsx'
-import { OLD_READER, Unavailable, readBest, saveBest, usePoll } from './games/kit.tsx'
+import { HowTo, OLD_READER, Unavailable, readBest, saveBest, usePoll } from './games/kit.tsx'
 import type { Sample } from './types.ts'
 import type { Live } from './useStream.ts'
 import { InfoButton } from './Learn.tsx'
 import { useSimple } from './simple.ts'
 import {
-  LID_HOLD,
-  LID_TOL,
   PAD_ASPECT,
   SHAPES,
   cover,
+  GAMES,
   fromPad,
-  nextHold,
+  gameAt,
+  lidPoints,
+  lidVerdict,
   outline,
   pathLength,
   pickTarget,
-  roundPoints,
   scoreTrace,
+  type GameId,
   type Pt,
   type Score,
   type ShapeKey,
@@ -27,7 +28,6 @@ import {
 
 type GameProps = { s: Sample; live: Live; demo: boolean }
 
-type GameId = 'lid' | 'pad' | 'mole' | 'fill-ram' | 'watts' | 'heat' | 'wifi'
 const NEW_GAMES: Record<Exclude<GameId, 'lid' | 'pad'>, React.LazyExoticComponent<React.ComponentType<LabProps>>> = {
   mole: lazy(() => import('./games/Mole.tsx')),
   'fill-ram': lazy(() => import('./games/FillRam.tsx')),
@@ -35,59 +35,94 @@ const NEW_GAMES: Record<Exclude<GameId, 'lid' | 'pad'>, React.LazyExoticComponen
   heat: lazy(() => import('./games/Heat.tsx')),
   wifi: lazy(() => import('./games/WifiHunt.tsx')),
 }
-/** Name, then the sensor it uses in technical and in everyday words. */
-const GAMES: [GameId, string, string, string][] = [
-  ['lid', 'Lid Challenge', 'hinge angle sensor', 'move the screen'],
-  ['pad', 'Trackpad Drawing', 'multitouch grid', 'draw with a finger'],
-  ['mole', 'Whack-a-Mole', 'trackpad taps', 'tap the trackpad'],
-  ['fill-ram', 'Fill the RAM', 'memory pressure', 'fill up the desk'],
-  ['watts', 'Guess the Watts', 'power sensors', 'guess the power'],
-  ['heat', 'Heat Race', 'temperature sensors', 'warm it up'],
-  ['wifi', 'Wi-Fi Hot and Cold', 'radio signal strength', 'find the best signal'],
-]
-const GAME_KEY = 'macviz.game'
 
+/** Line drawings for the game cards, on a 32 x 32 grid. */
+const ICONS: Record<GameId, React.ReactNode> = {
+  lid: (
+    <>
+      <path d="M4 25 H28" />
+      <path d="M8 25 L19 7" />
+      <path d="M14 25 A6 6 0 0 0 11 20" />
+    </>
+  ),
+  pad: (
+    <>
+      <rect x="4" y="7" width="24" height="18" rx="3" />
+      <path d="M9 19 C11 11 15 11 16 16 S21 21 23 12" />
+    </>
+  ),
+  mole: (
+    <>
+      <path d="M4 26 H28" />
+      <path d="M8 26 C8 18 24 18 24 26" />
+      <circle cx="16" cy="13" r="5" />
+      <path d="M14 12 h0.1 M18 12 h0.1" />
+    </>
+  ),
+  'fill-ram': (
+    <>
+      <rect x="4" y="9" width="24" height="12" rx="1.5" />
+      <path d="M8 25 V21 M12 25 V21 M16 25 V21 M20 25 V21 M24 25 V21" />
+      <rect x="7" y="12" width="12" height="6" fill="currentColor" stroke="none" opacity="0.5" />
+    </>
+  ),
+  watts: <path d="M18 3 L8 18 H15 L13 29 L24 13 H17 Z" />,
+  heat: (
+    <>
+      <path d="M13 19 V6 a3 3 0 0 1 6 0 V19 a5.5 5.5 0 1 1 -6 0 Z" />
+      <path d="M16 13 V22" />
+    </>
+  ),
+  wifi: (
+    <>
+      <path d="M4 12 C11 5 21 5 28 12" />
+      <path d="M8 16.5 C13 12 19 12 24 16.5" />
+      <path d="M12 21 C14.5 19 17.5 19 20 21" />
+      <circle cx="16" cy="25" r="1.6" fill="currentColor" />
+    </>
+  ),
+}
+
+const GameIcon = ({ id }: { id: GameId }) => (
+  <svg className="game-icon" viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    {ICONS[id]}
+  </svg>
+)
+
+/** The games list at #play, or one game at #play/<id>. Only the open game is mounted, so only it can run. */
 export function Games(p: LabProps) {
   const { s, live, demo } = p
-  const [game, setGameState] = useState<GameId>(() => {
-    try {
-      const g = localStorage.getItem(GAME_KEY)
-      return GAMES.some(([id]) => id === g) ? (g as GameId) : 'lid'
-    } catch {
-      return 'lid'
-    }
-  })
-  const setGame = (g: GameId) => {
-    setGameState(g)
-    try {
-      localStorage.setItem(GAME_KEY, g)
-    } catch {
-      // Not saved; the choice still holds for this visit.
-    }
-  }
   const simple = useSimple()
-  const Picked = game === 'lid' || game === 'pad' ? null : NEW_GAMES[game]
+  const game = gameAt(location.hash)
+  if (game) {
+    const Picked = game.id === 'lid' || game.id === 'pad' ? null : NEW_GAMES[game.id]
+    return (
+      <div className="games game-page">
+        {game.id === 'lid' && <LidGame s={s} live={live} demo={demo} />}
+        {game.id === 'pad' && <PadGame s={s} live={live} demo={demo} />}
+        {Picked && (
+          <Suspense fallback={<p className="fine">Loading the game…</p>}>
+            <Picked {...p} />
+          </Suspense>
+        )}
+      </div>
+    )
+  }
   return (
     <div className="games">
       <p className="lede">
-        {simple ? 'Quick games you play with the real parts of this Mac. If you can win, the sensors work.' : 'Quick games driven by real sensors and counters in this Mac. Winning one is proof the sensor and the reader both work.'}
+        {simple ? 'Quick games you play with the real parts of this Mac. Pick one to start.' : 'Quick games driven by real sensors and counters in this Mac. Winning one is proof the sensor and the reader both work.'}
       </p>
-      <div className="game-pick" role="group" aria-label="Choose a game">
-        {GAMES.map(([id, name, tech, plain]) => (
-          <button key={id} type="button" aria-pressed={game === id} onClick={() => setGame(id)}>
-            <span className="game-pick-name">{name}</span>
-            <span className="game-pick-sub">{simple ? plain : tech}</span>
-          </button>
+      <div className="game-list">
+        {GAMES.map((g) => (
+          <a key={g.id} className="game-card" href={`#play/${g.id}`}>
+            <GameIcon id={g.id} />
+            <span className="game-card-name">{g.name}</span>
+            <span className="game-card-blurb">{simple ? g.plainBlurb : g.blurb}</span>
+            {!simple && <span className="game-card-sub">{g.tech}</span>}
+          </a>
         ))}
       </div>
-      {/* Only the chosen game is mounted, so only it can run. */}
-      {game === 'lid' && <LidGame s={s} live={live} demo={demo} />}
-      {game === 'pad' && <PadGame s={s} live={live} demo={demo} />}
-      {Picked && (
-        <Suspense fallback={<p className="fine">Loading the game…</p>}>
-          <Picked {...p} />
-        </Suspense>
-      )}
     </div>
   )
 }
@@ -95,93 +130,67 @@ export function Games(p: LabProps) {
 // Lid Challenge
 
 const ROUNDS = 5
-/** Seconds per round. */
-const LIMIT = 20
-/** How long a hit or a miss shows before the next round. */
-const PAUSE_MS = 1400
 const BEST_LID = 'macviz.best.lid'
 
-type LidPhase = 'idle' | 'aim' | 'hit' | 'miss' | 'done'
+type LidPhase = 'idle' | 'aim' | 'result' | 'done'
+type LidRound = { target: number; got: number | null }
 
+/** No clock: each round shows a target, the player sets the lid by eye with the live reading hidden, then presses Done. */
 function LidGame({ s, live, demo }: GameProps) {
   const simple = useSimple()
   const [, render] = useReducer((n: number) => n + 1, 0)
-  // Game state lives in a ref: the poll mutates it and asks for a render, so a tick never sees a stale round.
   const g = useRef({
     phase: 'idle' as LidPhase,
-    round: 0,
-    target: 0,
-    score: 0,
-    held: 0,
-    deadline: 0,
-    /** Seconds left when the round ended, so the timer holds still through the pause. */
-    left: LIMIT,
-    gain: 0,
-    results: [] as boolean[],
+    rounds: [] as LidRound[],
     sim: 100,
     best: readBest(BEST_LID),
     newBest: false,
-    say: '',
   }).current
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const slider = useRef<HTMLInputElement>(null)
-  useEffect(() => () => clearTimeout(timer.current), [])
+  const action = useRef<HTMLButtonElement>(null)
 
   const read = () => (demo ? g.sim : live.lid)
-  const active = g.phase === 'aim' || g.phase === 'hit' || g.phase === 'miss'
+  const cur = g.rounds[g.rounds.length - 1]
+  const score = g.rounds.reduce((t, r) => t + (r.got == null ? 0 : lidPoints(r.got - r.target)), 0)
 
-  const newRound = () => {
-    g.target = pickTarget(read())
-    g.held = 0
-    g.left = LIMIT
-    g.deadline = performance.now() + LIMIT * 1000
+  const aim = () => {
+    g.rounds.push({ target: pickTarget(read()), got: null })
     g.phase = 'aim'
-    g.say = `Round ${g.round} of ${ROUNDS}. Move the lid to ${g.target} degrees and hold it there.`
-    render()
-  }
-  const next = () => {
-    if (g.round < ROUNDS) {
-      g.round++
-      newRound()
-      return
-    }
-    g.phase = 'done'
-    g.newBest = g.score > (g.best ?? 0)
-    if (g.newBest) {
-      g.best = g.score
-      saveBest(BEST_LID, g.score)
-    }
-    g.say = `Game over. ${g.score} points.${g.newBest ? ' A new best.' : ''}`
     render()
   }
   const start = () => {
-    clearTimeout(timer.current)
-    Object.assign(g, { round: 1, score: 0, results: [], newBest: false })
-    newRound()
-    if (demo) slider.current?.focus()
+    Object.assign(g, { rounds: [], newBest: false })
+    aim()
   }
-
-  usePoll(active, (dt) => {
-    if (g.phase === 'aim') {
-      g.held = nextHold(g.held, read(), g.target, dt)
-      const left = (g.deadline - performance.now()) / 1000
-      g.left = Math.max(0, left)
-      if (g.held >= LID_HOLD) {
-        g.gain = roundPoints(left, LIMIT)
-        g.score += g.gain
-        g.results.push(true)
-        g.phase = 'hit'
-        g.say = `Locked at ${g.target} degrees. Plus ${g.gain}.`
-        timer.current = setTimeout(next, PAUSE_MS)
-      } else if (left <= 0) {
-        g.results.push(false)
-        g.phase = 'miss'
-        g.say = "Time's up."
-        timer.current = setTimeout(next, PAUSE_MS)
-      }
+  const done = () => {
+    cur.got = read()
+    g.phase = 'result'
+    render()
+  }
+  const next = () => {
+    if (g.rounds.length < ROUNDS) return aim()
+    g.phase = 'done'
+    g.newBest = score > (g.best ?? 0)
+    if (g.newBest) {
+      g.best = score
+      saveBest(BEST_LID, score)
     }
     render()
+  }
+  const press = g.phase === 'aim' ? done : g.phase === 'result' ? next : start
+
+  // The player is looking at the hinge, not the pointer: the button keeps focus and Space works anywhere on the page.
+  useEffect(() => {
+    action.current?.focus({ preventScroll: true })
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== 'Space' || e.repeat || (e.target as HTMLElement).closest('input, textarea, button')) return
+      e.preventDefault()
+      press()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   })
+  // Before the game, the live reading proves the sensor works; it repaints while idle only.
+  usePoll(g.phase === 'idle' || g.phase === 'done', render)
 
   if (!demo && s.sensors == null) return <Unavailable title="Lid angle not available">{OLD_READER}</Unavailable>
   if (!demo && live.lid == null)
@@ -192,75 +201,102 @@ function LidGame({ s, live, demo }: GameProps) {
     )
 
   const angle = read()
-  const left = g.phase === 'aim' ? Math.max(0, (g.deadline - performance.now()) / 1000) : g.left
-  const inside = active && angle != null && Math.abs(angle - g.target) <= LID_TOL
-  const delta = angle == null ? null : g.target - angle
+  const err = cur?.got == null ? null : cur.got - cur.target
+  const shown = g.phase === 'aim' ? null : g.phase === 'result' ? cur.got : angle
 
   return (
-    <section className={`card lid-game phase-${g.phase} ${inside ? 'inside' : ''}`} aria-labelledby="lid-title">
-      <p className="sr-only" aria-live="polite">
-        {g.say}
-      </p>
+    <section className={`card lid-game phase-${g.phase}`} aria-labelledby="lid-title">
       <div className="game-head">
         <h3 id="lid-title">Lid Challenge</h3>
         {demo && <span className="sim-badge">Simulated</span>}
         <span className="game-score">
-          <span className="num">{g.score}</span> pts
+          <span className="num">{score}</span> pts
           <span className="game-best">best {g.best ?? 'none yet'}</span>
         </span>
       </div>
-      <div className="lid-pips" aria-label={`Round ${Math.max(1, g.round)} of ${ROUNDS}`}>
-        {Array.from({ length: ROUNDS }, (_, i) => (
-          <span key={i} className={`pip ${g.results[i] === true ? 'won' : g.results[i] === false ? 'lost' : i === g.round - 1 && active ? 'now' : ''}`} />
-        ))}
-      </div>
 
-      <div className="lid-stage">
-        <LidGauge angle={angle} target={active ? g.target : null} held={g.held} />
-        <div className="lid-readout" aria-hidden>
-          <span className="lid-now num">{angle == null ? 'n/a' : `${Math.round(angle)}°`}</span>
-          {active && (
-            <span className="lid-delta">
-              {g.phase === 'hit' ? 'Locked!' : g.phase === 'miss' ? "Time's up" : inside ? 'Hold it…' : delta == null ? '' : `${Math.abs(Math.round(delta))}° ${delta > 0 ? (simple ? 'more open' : 'open further') : simple ? 'more closed' : 'close a little'}`}
-            </span>
-          )}
-        </div>
-        {g.phase === 'hit' && (
-          <div className="lid-burst" key={g.round} aria-hidden>
-            {Array.from({ length: 12 }, (_, i) => (
-              <i key={i} style={{ '--a': `${i * 30}deg` } as React.CSSProperties} />
-            ))}
-            <b className="num">+{g.gain}</b>
-          </div>
-        )}
-      </div>
+      {g.phase === 'idle' && (
+        <HowTo
+          steps={[
+            'Turn so you can see your Mac from the side, like the drawing below.',
+            'Press Start. A target angle appears, for example 75°.',
+            'Move the screen to that angle by eye. The live reading stays hidden while you aim.',
+            <>Press <b>Done</b> or the space bar. You see how close you got, then the next target. {ROUNDS} targets, no time limit.</>,
+          ]}
+        />
+      )}
 
-      {active && (
-        <div className={`lid-timer ${left < 5 ? 'low' : ''}`} aria-hidden>
-          <span style={{ width: `${(left / LIMIT) * 100}%` }} />
+      {g.phase !== 'idle' && (
+        <div className="lid-pips" aria-label={`Target ${g.rounds.length} of ${ROUNDS}`}>
+          {Array.from({ length: ROUNDS }, (_, i) => {
+            const r = g.rounds[i]
+            const p = r?.got == null ? null : lidPoints(r.got - r.target)
+            return <span key={i} className={`pip ${p == null ? (r ? 'now' : '') : p >= 75 ? 'won' : p > 0 ? 'near' : 'lost'}`} />
+          })}
         </div>
       )}
-      <p className="game-goal">
-        {g.phase === 'idle' && `${ROUNDS} rounds. Each gives a target angle: get within ±${LID_TOL}° and hold for ${LID_HOLD} s. Faster is worth more.`}
-        {g.phase === 'idle' && !demo && angle != null && angle < 5 && <span className="game-hint"> The lid reads closed; open it to play.</span>}
-        {active && (
-          <>
-            Target <span className="num strong">{g.target}°</span> · round {g.round} of {ROUNDS} · <span className="num">{Math.ceil(left)}</span> s
-          </>
-        )}
-        {g.phase === 'done' && (
-          <>
+
+      <div className="lid-stage">
+        <LidGauge angle={shown} target={g.phase === 'aim' || g.phase === 'result' ? cur.target : null} />
+        <div className="lid-readout" aria-live="polite">
+          {g.phase === 'aim' && (
+            <>
+              <span className="lid-label">Set the screen to</span>
+              <span className="lid-now num">{cur.target}°</span>
+            </>
+          )}
+          {g.phase === 'result' && (
+            <>
+              <span className="lid-now num">{err == null ? 'n/a' : `${Math.abs(Math.round(err))}° off`}</span>
+              <span className="lid-delta">
+                {err == null ? 'The hinge sent no reading. This round scores 0.' : `${lidVerdict(err)}. You set ${Math.round(cur.got!)}°, the target was ${cur.target}°. +${lidPoints(err)}`}
+              </span>
+            </>
+          )}
+          {(g.phase === 'idle' || g.phase === 'done') && (
+            <>
+              <span className="lid-label">{simple ? 'The screen is open' : 'Hinge angle now'}</span>
+              <span className="lid-now num">{angle == null ? 'n/a' : `${Math.round(angle)}°`}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {g.phase === 'done' && (
+        <div className="lid-summary">
+          <p className="game-goal">
             {g.newBest ? 'New best: ' : 'Final score: '}
-            <span className="num strong">{g.score}</span> of {ROUNDS * 100}, {g.results.filter(Boolean).length} of {ROUNDS} targets hit.
-          </>
-        )}
-      </p>
+            <span className="num strong">{score}</span> of {ROUNDS * 100}
+          </p>
+          <table className="lid-table">
+            <thead>
+              <tr>
+                <th>Target</th>
+                <th>You set</th>
+                <th>Off by</th>
+                <th>Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              {g.rounds.map((r, i) => (
+                <tr key={i}>
+                  <td className="num">{r.target}°</td>
+                  <td className="num">{r.got == null ? 'n/a' : `${Math.round(r.got)}°`}</td>
+                  <td className="num">{r.got == null ? 'n/a' : `${Math.abs(Math.round(r.got - r.target))}°`}</td>
+                  <td className="num">{r.got == null ? 0 : lidPoints(r.got - r.target)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {g.phase === 'idle' && !demo && angle != null && angle < 5 && <p className="game-hint">The lid reads closed. Open it to play.</p>}
 
       {demo && (
         <label className="sim-control">
           <span>Simulated hinge</span>
           <input
-            ref={slider}
             type="range"
             min={0}
             max={135}
@@ -272,37 +308,27 @@ function LidGame({ s, live, demo }: GameProps) {
             }}
             aria-valuetext={`${g.sim} degrees`}
           />
-          <span className="fine">Arrow keys nudge it one degree; Page Up and Page Down jump further.</span>
         </label>
       )}
 
       <div className="game-actions">
-        {!active && (
-          <button type="button" className="game-go" onClick={start}>
-            {g.phase === 'done' ? 'Play again' : 'Start'}
-          </button>
-        )}
+        <button ref={action} type="button" className="game-go" onClick={press}>
+          {g.phase === 'aim' ? 'Done' : g.phase === 'result' ? (g.rounds.length < ROUNDS ? 'Next target' : 'See my score') : g.phase === 'done' ? 'Play again' : 'Start'}
+        </button>
       </div>
 
-      {g.phase === 'done' ? (
-        <p className="game-learn">
-          {simple
-            ? 'A tiny sensor inside the hinge tells the Mac how far the screen is open, in degrees. You just played a game with it.'
-            : 'Measured: the hinge angle, from a sensor in the hinge that macOS exposes as a HID device and reports in whole degrees. The reader forwards each change of half a degree or more, up to 30 times a second.'}
-          <InfoButton topic="lid-angle" />
-        </p>
-      ) : (
-        <p className="fine game-how">
-          {simple ? 'A small sensor in the hinge measures how far the screen is open.' : 'A sensor in the hinge reports its angle in degrees; the reader sends each change up to 30 times a second.'}
-          <InfoButton topic="lid-angle" />
-        </p>
-      )}
+      <p className={g.phase === 'done' ? 'game-learn' : 'fine game-how'}>
+        {simple
+          ? 'A tiny sensor inside the hinge tells the Mac how far the screen is open, in degrees.'
+          : 'Measured: the hinge angle, from a sensor in the hinge that macOS exposes as a HID device and reports in whole degrees. The reader forwards each change of half a degree or more, up to 30 times a second.'}
+        <InfoButton topic="lid-angle" />
+      </p>
     </section>
   )
 }
 
-/** A side view of the laptop on a protractor: the lid at the live angle, the target as a lit wedge with a ghost lid. */
-function LidGauge({ angle, target, held }: { angle: number | null; target: number | null; held: number }) {
+/** A side view of the laptop on a protractor: the lid at the given angle, the target as a dashed ghost lid, and the miss as an arc. */
+function LidGauge({ angle, target }: { angle: number | null; target: number | null }) {
   const P = { x: 120, y: 160 }
   const at = (deg: number, r: number) => {
     const a = (deg * Math.PI) / 180
@@ -315,10 +341,9 @@ function LidGauge({ angle, target, held }: { angle: number | null; target: numbe
   }
   const lid = angle == null ? null : at(Math.max(0, Math.min(140, angle)), 108)
   const ghost = target == null ? null : at(target, 108)
-  const ring = 2 * Math.PI * 13
-  const label = angle == null ? 'Lid angle not available.' : `Lid open ${Math.round(angle)} degrees${target == null ? '' : `, target ${target} degrees`}.`
+  const label = `${angle == null ? '' : `Lid at ${Math.round(angle)} degrees. `}${target == null ? '' : `Target ${target} degrees.`}`
   return (
-    <svg className="lid-gauge" viewBox="0 0 300 186" role="img" aria-label={label}>
+    <svg className="lid-gauge" viewBox="0 0 300 186" role="img" aria-label={label || 'Lid angle not shown.'}>
       <path d={arc(0, 140, 128)} className="lid-scale" />
       {Array.from({ length: 15 }, (_, i) => {
         const d = i * 10
@@ -334,30 +359,12 @@ function LidGauge({ angle, target, held }: { angle: number | null; target: numbe
           </text>
         )
       })}
-      {target != null && ghost && (
-        <>
-          <path d={`M ${P.x} ${P.y} L ${at(target - LID_TOL, 132).x} ${at(target - LID_TOL, 132).y} A 132 132 0 0 0 ${at(target + LID_TOL, 132).x} ${at(target + LID_TOL, 132).y} Z`} className="lid-window" />
-          <line x1={P.x} y1={P.y} x2={ghost.x} y2={ghost.y} className="lid-ghost" />
-        </>
+      {ghost && <line x1={P.x} y1={P.y} x2={ghost.x} y2={ghost.y} className="lid-ghost" />}
+      {target != null && angle != null && Math.abs(angle - target) >= 1 && (
+        <path d={arc(Math.min(angle, target), Math.max(angle, target), 120)} className="lid-miss" />
       )}
-      {/* The base, then the lid from the hinge. */}
       <rect x={P.x - 4} y={P.y} width={168} height={9} rx={4} className="lid-base" />
-      {lid && (
-        <>
-          <line x1={P.x} y1={P.y} x2={lid.x} y2={lid.y} className="lid-lid" />
-          {target != null && (
-            <circle
-              cx={lid.x}
-              cy={lid.y}
-              r={13}
-              className="lid-hold"
-              strokeDasharray={ring}
-              strokeDashoffset={ring * (1 - Math.min(1, held / LID_HOLD))}
-              transform={`rotate(-90 ${lid.x} ${lid.y})`}
-            />
-          )}
-        </>
-      )}
+      {lid && <line x1={P.x} y1={P.y} x2={lid.x} y2={lid.y} className="lid-lid" />}
       <circle cx={P.x} cy={P.y} r={6} className="lid-pivot" />
     </svg>
   )

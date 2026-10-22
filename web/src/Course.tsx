@@ -433,6 +433,7 @@ const Home = memo(function Home() {
                   <span className="course-sub">
                     <span className="num">{l.minutes} min</span>
                     <span>{partName(l, simple) ?? say('whole')}</span>
+                    {(LESSON_LABS[l.n] ?? []).length > 0 && <span>{LESSON_LABS[l.n].length === 1 ? '1 animated lab' : `${LESSON_LABS[l.n].length} animated labs`}</span>}
                     {got > 0 && <span className="num">{say('gotN', { n: got, total: l.quiz.length })}</span>}
                     {done && <span className="lesson-done-tag">{say('isDone')}</span>}
                   </span>

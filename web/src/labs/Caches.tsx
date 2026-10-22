@@ -101,7 +101,7 @@ function frame(i: number, t: number, simple: boolean): Frame {
       const s0 = slot(1, 0)
       if (t > 0.3 && t < 2.2) f.tokens.push({ at: along([[s0.x + 13, s0.y + 8], [s0.x + 13, MID(2) + 4]], phase(t, 0.3, 2.0)), kind: 'evict', label: simple ? 'oldest out' : 'evict LRU' })
       if (t > 2.4) access(f, t, 2.4, 1, 'load y', simple)
-      f.note = t < 2.4 ? (simple ? 'The notebook is full: the page used longest ago makes room.' : 'The L1 set is full: the least recently used line goes back to L2.') : simple ? 'y was used a moment ago, so it is still in the notebook.' : 'y was used recently, so it is still in L1: temporal locality.'
+      f.note = t < 2.4 ? (simple ? 'The notebook is full: the note used longest ago makes room.' : 'The L1 set is full: the least recently used line goes back to L2.') : simple ? 'y was used a moment ago, so it is still in the notebook.' : 'y was used recently, so it is still in L1: temporal locality.'
       break
     }
     case 6: {

@@ -165,7 +165,7 @@ function MapTable({ view, ev }: { view: View; ev: FtlEvent | null }) {
   return (
     <g>
       <text className="fl-head" x={30} y={40}>
-        {simple ? "The controller's address book" : 'FTL map: logical → physical'}
+        {simple ? "The drive's address book" : 'FTL map: logical → physical'}
       </text>
       {NAMES.map((n, l) => {
         const p = at(l)
@@ -377,7 +377,7 @@ function Simulator() {
   const maxE = Math.max(...d.ftl.erases)
   return (
     <section className="card lab-try">
-      <h3>{simple ? 'Try it: be the SSD for a day' : 'Try it: an FTL simulator'}</h3>
+      <h3>{simple ? 'Try it: be the storage drive for a day' : 'Try it: an FTL simulator'}</h3>
       <p className="fine">
         {simple
           ? 'Save, change and delete files, and watch what the flash has to do. Eight boxes of eight slots hold up to 40 slots of files, so some room is always kept spare. Grey slots are old copies waiting to be wiped.'
@@ -395,10 +395,10 @@ function Simulator() {
         </button>
         <div className="lab-seg" role="group" aria-label="TRIM">
           <button type="button" aria-pressed={useTrim} onClick={() => setTrim(true)}>
-            TRIM on
+            {simple ? 'Tell the drive' : 'TRIM on'}
           </button>
           <button type="button" aria-pressed={!useTrim} onClick={() => setTrim(false)}>
-            TRIM off
+            {simple ? "Don't tell it" : 'TRIM off'}
           </button>
         </div>
         <button type="button" className="lab-btn" onClick={() => setOps([])} disabled={!ops.length}>
@@ -448,7 +448,7 @@ function Simulator() {
           <dd className="num">{wa == null ? 'n/a' : `${wa.toFixed(2)}×`}</dd>
         </div>
         <div>
-          <dt>{simple ? 'Same day with TRIM ' : 'Same history, TRIM '}{useTrim ? 'off' : 'on'}</dt>
+          <dt>{simple ? `Same day, ${useTrim ? 'not telling it' : 'telling it'}` : `Same history, TRIM ${useTrim ? 'off' : 'on'}`}</dt>
           <dd className="num">{waOther == null ? 'n/a' : `${waOther.toFixed(2)}×`}</dd>
         </div>
         <div>
@@ -491,9 +491,11 @@ function Simulator() {
               ? 'The disk is full. Delete a file to make room.'
               : 'No free logical pages: delete a file first.'
             : wa != null && waOther != null && Math.abs(wa - waOther) > 0.005
-              ? `${useTrim ? 'With TRIM' : 'Without TRIM'} the flash wrote ${wa.toFixed(2)} pages per page saved; ${useTrim ? 'without' : 'with'} it, ${waOther.toFixed(2)}. ${simple ? 'Without TRIM the SSD keeps copying deleted files it was never told about.' : 'Without TRIM, GC keeps copying deleted data it was never told is dead.'}`
+              ? simple
+                ? `${useTrim ? 'Telling the drive' : 'Not telling it'}, it did ${wa.toFixed(2)}× the work; ${useTrim ? 'not telling it' : 'telling it'}, ${waOther.toFixed(2)}×. If nobody tells it, the storage drive keeps copying deleted files.`
+                : `${useTrim ? 'With TRIM' : 'Without TRIM'} the flash wrote ${wa.toFixed(2)} pages per page saved; ${useTrim ? 'without' : 'with'} it, ${waOther.toFixed(2)}. Without TRIM, GC keeps copying deleted data it was never told is dead.`
               : simple
-                ? 'No difference from TRIM yet. It matters once files are deleted and the boxes have to be tidied.'
+                ? 'Telling it makes no difference yet. It matters once files are deleted and the boxes have to be tidied.'
                 : 'TRIM makes no difference yet: it matters once deleted data would otherwise be copied by GC.'}
       </p>
     </section>
@@ -589,7 +591,7 @@ export default function Flash({ s, history, demo }: LabProps) {
       ),
     },
     {
-      title: simple ? 'Telling the SSD what was deleted' : 'TRIM',
+      title: simple ? 'Telling the storage drive what was deleted' : 'TRIM',
       dur: 4,
       tech: (
         <p>
@@ -642,9 +644,9 @@ export default function Flash({ s, history, demo }: LabProps) {
             : 'Disk rates come from the block storage byte counters. Swap is written to /System/Volumes/VM and is encrypted like everything else.'
         }
       >
-        <LiveStat label={simple ? 'SSD reads' : 'Disk reads'} value={rate(s.disk.readBps)} sub={<Sparkline values={history.map((x) => x.disk.readBps)} w={90} h={18} label="Disk reads over the last minutes" />} />
-        <LiveStat label={simple ? 'SSD writes' : 'Disk writes'} value={rate(s.disk.writeBps)} sub={<Sparkline values={history.map((x) => x.disk.writeBps)} w={90} h={18} label="Disk writes over the last minutes" />} hot={s.disk.writeBps > 200e6} />
-        <LiveStat label={simple ? 'Overflow Storage' : 'Swap used'} value={memGB(swap)} sub={swap > 0 ? (simple ? 'on the SSD now' : 'in swap files on the SSD') : simple ? 'none needed' : 'no swap in use'} hot={swap > 2 ** 30} />
+        <LiveStat label={simple ? 'Storage reads' : 'Disk reads'} value={rate(s.disk.readBps)} sub={<Sparkline values={history.map((x) => x.disk.readBps)} w={90} h={18} label="Disk reads over the last minutes" />} />
+        <LiveStat label={simple ? 'Storage writes' : 'Disk writes'} value={rate(s.disk.writeBps)} sub={<Sparkline values={history.map((x) => x.disk.writeBps)} w={90} h={18} label="Disk writes over the last minutes" />} hot={s.disk.writeBps > 200e6} />
+        <LiveStat label={simple ? 'Overflow Storage' : 'Swap used'} value={memGB(swap)} sub={swap > 0 ? (simple ? 'on the storage drive now' : 'in swap files on the SSD') : simple ? 'none needed' : 'no swap in use'} hot={swap > 2 ** 30} />
         <LiveStat label={simple ? 'Desk Space pressure' : 'Memory pressure'} value={s.memory.pressure} sub={simple ? 'high means more Overflow' : 'warn or critical means swapping'} />
       </LiveStrip>
 
@@ -657,7 +659,7 @@ export default function Flash({ s, history, demo }: LabProps) {
 
       <Simulator />
 
-      <Deeper title={simple ? 'Should I worry about wearing out my SSD?' : 'Wear, swap and what you can check'}>
+      <Deeper title={simple ? 'Should I worry about wearing out my storage drive?' : 'Wear, swap and what you can check'}>
         {simple ? (
           <>
             <p>For everyday use, no. Howard Oakley estimates a 512 GB Mac SSD could take around 1,500 TB of writes, which is decades at a normal pace. The one habit that adds a lot of writes is running out of Desk Space all day, because Overflow Storage lives on the SSD.</p>

@@ -340,7 +340,7 @@ button {
   background:
     radial-gradient(700px 420px at 50% 55%, var(--accent-soft), transparent 70%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent);
-  overflow: hidden;
+  overflow: clip;
 }
 .stage {
   position: absolute;
@@ -2111,17 +2111,18 @@ a.ex-link {
   opacity: 0.25;
   filter: blur(2.5px);
 }
-/* Chrome rasterizes a 3D layer at its layout size and stretches it when the camera zooms in, so the close-up came
-   out soft. The focused layer is drawn four times larger and scaled back, which gives it pixels to spare. */
+/* Chrome rasterizes a 3D layer near its layout size and stretches it when the camera zooms in, so the close-up came
+   out soft. The focused layer is drawn twice as large and scaled back. Not more: at 3x or 4x the raster passes a
+   Chrome size limit at close-up zoom on a 2x screen and falls back to a far lower resolution, which garbles the labels. */
 .stage[data-focus] .layer[data-hot] .layer-svg:not(.underside) {
-  width: 400%;
-  height: 400%;
+  width: 200%;
+  height: 200%;
   transform-origin: 0 0;
-  transform: scale(0.25);
+  transform: scale(0.5);
 }
 /* Close-up drawings (Detail.tsx). Mounted only while their part is focused. Nothing in them animates, not even a
    fade in: an opacity animation makes Chrome rasterise the group on its own at layout scale, which blurs the text, and
-   the hot layer is four times larger, so motion would repaint a big layer every frame. */
+   the hot layer is twice as large, so motion would repaint a big layer every frame. */
 .closeup {
   --ink: var(--muted);
   --ink-line: var(--glass-edge);
@@ -3184,44 +3185,67 @@ a.ex-link {
 .games > .lede {
   margin: 0;
 }
-.game-pick {
+.game-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(140px, 45%), 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+  gap: 12px;
 }
-.game-pick button {
+.game-card {
   display: grid;
-  gap: 2px;
-  padding: 12px 16px;
-  text-align: left;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr auto;
+  column-gap: 14px;
+  row-gap: 4px;
+  padding: 16px;
   border-radius: 14px;
   border: 1px solid var(--line-strong);
   background: var(--panel);
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
-.game-pick button:hover {
+.game-card:hover,
+.game-card:focus-visible {
   border-color: var(--accent);
-}
-.game-pick button[aria-pressed='true'] {
-  border-color: var(--accent);
-  background: linear-gradient(135deg, var(--accent-soft), transparent 70%), var(--panel);
   box-shadow: 0 0 24px var(--accent-soft);
+  transform: translateY(-2px);
 }
-.game-pick-name {
+.game-icon {
+  grid-row: 1 / -1;
+  width: 48px;
+  height: 48px;
+  padding: 8px;
+  border-radius: 12px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.game-card-name {
   font-weight: 650;
-  font-size: 15px;
+  font-size: 16px;
 }
-.game-pick-sub {
+.game-card-blurb {
+  font-size: 13px;
+  line-height: 1.45;
+}
+.game-card-sub {
   font-size: 12px;
   color: var(--muted);
+}
+/* The page heading already names the open game; the card keeps its title for screen readers only. */
+.game-page .game-head h3 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .lid-game,
 .pad-game {
   position: relative;
   display: grid;
   gap: 12px;
-  overflow: hidden;
+  overflow: clip;
   background: radial-gradient(600px 300px at 30% 0%, var(--accent-soft), transparent 70%), var(--panel);
 }
 .game-head {
@@ -3273,6 +3297,22 @@ a.ex-link {
 }
 .game-actions:empty {
   display: none;
+}
+/* On a game page the main button stays in view at the bottom edge, so nobody has to scroll to find Start or Done. */
+.game-page .game-actions {
+  position: sticky;
+  bottom: 12px;
+  z-index: 2;
+  gap: 10px;
+  justify-self: center;
+  padding: 8px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--panel) 80%, transparent);
+  backdrop-filter: blur(10px);
+}
+.game-page .game-go {
+  padding: 12px 34px;
+  font-size: 16px;
 }
 .game-go {
   padding: 10px 26px;
@@ -3328,6 +3368,10 @@ a.ex-link {
   border-color: var(--ok);
   background: var(--ok);
 }
+.pip.near {
+  border-color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 40%, transparent);
+}
 .pip.lost {
   border-color: var(--crit);
   background: color-mix(in srgb, var(--crit) 35%, transparent);
@@ -3356,21 +3400,6 @@ a.ex-link {
   font: 10px var(--mono);
   text-anchor: middle;
 }
-.lid-window {
-  fill: var(--accent-soft);
-  stroke: var(--accent);
-  stroke-width: 1;
-}
-.inside .lid-window {
-  fill: color-mix(in srgb, var(--ok) 28%, transparent);
-  stroke: var(--ok);
-  animation: lid-glow 0.6s ease-in-out infinite alternate;
-}
-@keyframes lid-glow {
-  to {
-    fill: color-mix(in srgb, var(--ok) 50%, transparent);
-  }
-}
 .lid-ghost {
   stroke: var(--accent);
   stroke-width: 2;
@@ -3386,13 +3415,11 @@ a.ex-link {
   stroke-linecap: round;
   filter: drop-shadow(0 0 6px var(--accent));
 }
-.inside .lid-lid {
-  filter: drop-shadow(0 0 8px var(--ok));
-}
-.lid-hold {
-  fill: var(--panel-solid);
-  stroke: var(--ok);
-  stroke-width: 3;
+.lid-miss {
+  fill: none;
+  stroke: var(--warn);
+  stroke-width: 5;
+  stroke-linecap: round;
 }
 .lid-pivot {
   fill: var(--accent);
@@ -3414,69 +3441,51 @@ a.ex-link {
   font-weight: 600;
   color: var(--accent);
 }
-.inside .lid-delta,
-.phase-hit .lid-delta {
-  color: var(--ok);
+.lid-label {
+  font-size: 13px;
+  color: var(--muted);
 }
-.phase-miss .lid-delta {
-  color: var(--crit);
+.lid-summary {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
 }
-.phase-hit {
-  animation: lid-flash 0.9s ease-out;
+.lid-table {
+  border-collapse: collapse;
+  font-size: 13px;
 }
-@keyframes lid-flash {
-  from {
-    box-shadow: 0 0 0 2px var(--ok), 0 0 60px color-mix(in srgb, var(--ok) 45%, transparent);
-  }
+.lid-table th,
+.lid-table td {
+  padding: 4px 14px;
+  text-align: right;
+  border-bottom: 1px solid var(--line);
 }
-.phase-miss .lid-gauge {
-  animation: lid-shake 0.4s;
+.lid-table th {
+  font-weight: 600;
+  color: var(--muted);
 }
-@keyframes lid-shake {
-  25% {
-    transform: translateX(-6px);
-  }
-  75% {
-    transform: translateX(6px);
-  }
+.game-steps {
+  margin: 0 auto;
+  padding: 12px 16px 12px 36px;
+  max-width: 62ch;
+  display: grid;
+  gap: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel-solid);
 }
-/* The burst: rays fly out from the middle of the gauge and the points pop. */
-.lid-burst {
-  position: absolute;
-  left: 50%;
-  top: 42%;
-  pointer-events: none;
+.game-more summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
 }
-.lid-burst i {
-  position: absolute;
-  width: 4px;
-  height: 30px;
-  margin-left: -2px;
-  border-radius: 2px;
-  background: linear-gradient(var(--ok), transparent);
-  transform: rotate(var(--a)) translateY(-90px);
-  opacity: 0;
-  animation: lid-ray 0.9s ease-out;
+.game-more[open] summary {
+  margin-bottom: 8px;
 }
-@keyframes lid-ray {
-  from {
-    transform: rotate(var(--a)) translateY(-30px);
-    opacity: 1;
-  }
-}
-.lid-burst b {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  font-size: 40px;
-  color: var(--ok);
-  text-shadow: 0 0 20px var(--ok);
-  animation: lid-pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1);
-}
-@keyframes lid-pop {
-  from {
-    transform: translate(-50%, -50%) scale(0.3);
-    opacity: 0;
-  }
+.game-steps li::marker {
+  font-weight: 650;
+  color: var(--accent);
 }
 .lid-timer {
   height: 6px;
@@ -4040,6 +4049,16 @@ a.focus-open {
 .lab-card-blurb {
   font-size: 13px;
   color: var(--muted);
+}
+.lab-lesson {
+  justify-self: start;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+.lab-lesson:hover {
+  text-decoration: underline;
 }
 .lab-card-meta {
   display: flex;

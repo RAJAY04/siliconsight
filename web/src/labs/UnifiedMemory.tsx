@@ -130,7 +130,7 @@ function frame(i: number, t: number, macGBs: number, simple: boolean): Frame {
       f.pcFull = true
       f.mac = [{ label: work, s: macPass, kind: 'work' }]
       f.clock = (phase(t, 1.8, 4.6) * macPass) / (copy + pcPass)
-      f.macNote = simple ? 'The GPU is told where the model is, and reads it there' : 'The CPU hands over an address; the GPU reads in place'
+      f.macNote = simple ? 'The graphics part is told where the model is, and reads it there' : 'The CPU hands over an address; the GPU reads in place'
       break
     case 5:
       f.lit = ['mac-gpu', 'mac-ane', 'mac-media', 'mac-cpu', 'mac-pool']
@@ -255,7 +255,7 @@ function Capacity({ k, ram, simple }: { k: number; ram: number; simple: boolean 
   const bar = (v: number) => Math.max(3, (v / top) * 230 * k)
   const rows: { label: string; v: number; mac: boolean }[] = [
     ...CARDS.map((c) => ({ label: simple ? `${memGB(c.vram, 0)} card` : `${memGB(c.vram, 0)} VRAM`, v: c.vram, mac: false })),
-    { label: simple ? 'GPU share' : 'GPU, ~75%', v: ram * 0.75, mac: true },
+    { label: simple ? 'Graphics share' : 'GPU, ~75%', v: ram * 0.75, mac: true },
     { label: simple ? 'Whole desk' : 'All RAM', v: ram, mac: true },
   ]
   const model = (v: number, name: string, x: number, w: number) => {
@@ -627,8 +627,8 @@ export default function UnifiedMemory({ hw, s, history, demo }: LabProps) {
         />
         <LiveStat label={simple ? 'Top Highway Speed' : 'Peak bandwidth'} value={peak == null ? 'n/a' : `${peak} GB/s`} sub={`Apple, ${hw.chip}`} />
         <LiveStat label={simple ? 'Shared desk' : 'Unified memory'} value={memGB(ram, 0)} sub={simple ? 'for every worker' : 'hw.memsize'} />
-        <LiveStat label={simple ? 'AI model on GPU' : 'GPU memory, local LLM'} value={memGB(llm)} sub={s.llm ? s.llm.runtime : simple ? 'no AI model running' : 'no runtime found'} />
-        <LiveStat label={simple ? 'Graphics busy' : 'GPU busy'} value={pct(s.gpu.usage)} sub={`${hw.gpuCores ?? 'n/a'} ${simple ? 'graphics cores' : 'GPU cores'}`} />
+        <LiveStat label={simple ? 'AI model on the graphics part' : 'GPU memory, local LLM'} value={memGB(llm)} sub={s.llm ? s.llm.runtime : simple ? 'no AI model running' : 'no runtime found'} />
+        <LiveStat label={simple ? 'Graphics busy' : 'GPU busy'} value={pct(s.gpu.usage)} sub={`${hw.gpuCores ?? 'n/a'} ${simple ? 'graphics workers' : 'GPU cores'}`} />
       </LiveStrip>
 
       <section className="card lab-stage-card">

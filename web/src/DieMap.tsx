@@ -59,7 +59,7 @@ type Props = {
   paused?: boolean
 }
 /** Short block names for the small inset, where the full ones would not fit at a readable size. */
-const SHORT: Record<string, string> = { 'System cache': 'Cache', 'Memory interface': 'Memory', Display: 'Disp.', Secure: 'SE' }
+const SHORT: Record<string, string> = { 'System cache': 'Cache', 'Memory interface': 'Memory', Display: 'Disp.', Secure: 'SE', 'Shared shelf': 'Shelf', 'Door to Desk Space': 'Desk', 'AI team': 'AI' }
 const short = (title: string) => {
   const base = title.replace(/ × \d+$/, '')
   return SHORT[base] ?? base
@@ -158,19 +158,19 @@ export function DieMap({ hw, s, onCore, paused = false }: Props) {
         {tiles.map((t, i) => (
           <rect key={i} x={t.x} y={t.y} width={t.w} height={t.h} rx={t.r} className="dm-base" />
         ))}
-        {label(B.gpu, count('GPU', hw.gpuCores), s.gpu.usage == null ? NA : `${pct(s.gpu.usage)} · ${gpuMhz(s.gpu.freqMHz)}`)}
-        {label(B.p, `${simple ? 'Fast' : 'P'} × ${hw.pCores}`, mhz(s.cpu.pFreqMHz))}
-        {label(B.e, `${simple ? 'Eco' : 'E'} × ${hw.eCores}`, mhz(s.cpu.eFreqMHz))}
-        {label(B.ane, count('ANE', hw.aneCores))}
-        {label(B.slc, 'System cache')}
-        {label(B.media, 'Media')}
-        {label(B.display, 'Display')}
-        {label(B.secure, 'Secure')}
-        {label(B.io, 'I/O')}
+        {label(B.gpu, count(simple ? 'Graphics' : 'GPU', hw.gpuCores), s.gpu.usage == null ? NA : simple ? pct(s.gpu.usage) : `${pct(s.gpu.usage)} · ${gpuMhz(s.gpu.freqMHz)}`)}
+        {label(B.p, `${simple ? 'Fast' : 'P'} × ${hw.pCores}`, simple ? undefined : mhz(s.cpu.pFreqMHz))}
+        {label(B.e, `${simple ? 'Eco' : 'E'} × ${hw.eCores}`, simple ? undefined : mhz(s.cpu.eFreqMHz))}
+        {label(B.ane, count(simple ? 'AI team' : 'ANE', hw.aneCores))}
+        {label(B.slc, simple ? 'Shared shelf' : 'System cache')}
+        {label(B.media, simple ? 'Video' : 'Media')}
+        {label(B.display, simple ? 'Screen' : 'Display')}
+        {label(B.secure, simple ? 'Safe' : 'Secure')}
+        {label(B.io, simple ? 'Ports' : 'I/O')}
         {[B.memA, B.memB].map((r, i) => (
           <g key={i}>
             <rect x={r.x + 8} y={r.y + 30} width={r.w - 16} height={r.h - 38} rx="5" className="dm-phy" style={{ '--u': bw == null ? 0.05 : step(bw / peak) } as CSSProperties} />
-            {label(r, 'Memory interface', i === 0 ? (bw == null ? NA : `${num(bw)} GB/s`) : undefined)}
+            {label(r, simple ? 'Door to Desk Space' : 'Memory interface', i === 0 && !simple ? (bw == null ? NA : `${num(bw)} GB/s`) : undefined)}
           </g>
         ))}
       </svg>

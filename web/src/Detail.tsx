@@ -5,6 +5,7 @@ import { textUnit, type PartKey } from './parts.ts'
 import { gpuMhz, memGB, mhz, pct, rate, step, temp, watts } from './format.ts'
 import { peakBandwidth } from './story.ts'
 import { useCanvasLoop } from './loop.ts'
+import { useSimple } from './simple.ts'
 
 /*
  * Close-up drawings, one per part. Each is mounted only while its part is focused (Scene.tsx), so the overview draws
@@ -81,6 +82,7 @@ function Patterns({ pitch }: { pitch: number }) {
 
 function Soc({ g, hw, s }: { g: Geometry; hw: Hardware; s: Sample }) {
   const u = unit('soc')
+  const simple = useSimple()
   const P = g.PKG
   const D = g.DIE
   const f = u * LABEL
@@ -107,11 +109,14 @@ function Soc({ g, hw, s }: { g: Geometry; hw: Hardware; s: Sample }) {
           <Stack x={r.x + r.w - 9} y={r.y + 1.6} w={6.5} h={2.6} />
         </g>
       ))}
-      {[
-        `${hw.pCores} P cores at ${mhz(s.cpu.pFreqMHz)}`,
-        `${hw.eCores} E cores at ${mhz(s.cpu.eFreqMHz)}`,
-        `${hw.gpuCores ? `${hw.gpuCores} ` : ''}GPU cores at ${gpuMhz(s.gpu.freqMHz)}`,
-      ].map((l, i) => (
+      {(simple
+        ? [`${hw.pCores} Fast Workers`, `${hw.eCores} Eco Workers`, `${hw.gpuCores ? `${hw.gpuCores} ` : ''}graphics workers`]
+        : [
+            `${hw.pCores} P cores at ${mhz(s.cpu.pFreqMHz)}`,
+            `${hw.eCores} E cores at ${mhz(s.cpu.eFreqMHz)}`,
+            `${hw.gpuCores ? `${hw.gpuCores} ` : ''}GPU cores at ${gpuMhz(s.gpu.freqMHz)}`,
+          ]
+      ).map((l, i) => (
         <T key={i} x={P.x} y={under(P, f, i)} s={f} v>
           {l}
         </T>
@@ -122,6 +127,7 @@ function Soc({ g, hw, s }: { g: Geometry; hw: Hardware; s: Sample }) {
 
 function Memory({ g, hw, s }: { g: Geometry; hw: Hardware; s: Sample }) {
   const u = unit('memory')
+  const simple = useSimple()
   const f = u * LABEL
   const D = g.DIE
   const P = g.PKG
@@ -150,17 +156,25 @@ function Memory({ g, hw, s }: { g: Geometry; hw: Hardware; s: Sample }) {
             {memGB(hw.memBytes / 2, 0)}
           </T>
           <Stack x={r.x + r.w - 9} y={r.y + 1.6} w={6.5} h={2.6} />
-          <T x={r.x + r.w / 2} y={r.y + r.h * 0.5} s={f} a="middle">
-            4 x 16 bit
-          </T>
+          {!simple && (
+            <T x={r.x + r.w / 2} y={r.y + r.h * 0.5} s={f} a="middle">
+              4 x 16 bit
+            </T>
+          )}
         </g>
       ))}
       <T x={P.x} y={under(P, u * VALUE)} s={u * VALUE} v>
-        {bw == null ? 'Bandwidth not readable' : `${bw.toFixed(0)}${peak ? ` of ${peak}` : ''} GB/s`}
-        {s.power.dramW != null && ` · ${watts(s.power.dramW)}`}
+        {simple
+          ? bw == null
+            ? 'Highway speed not readable'
+            : `Highway ${peak ? `${Math.min(100, Math.round((bw / peak) * 100))}% busy` : 'in use'}`
+          : bw == null
+            ? 'Bandwidth not readable'
+            : `${bw.toFixed(0)}${peak ? ` of ${peak}` : ''} GB/s`}
+        {!simple && s.power.dramW != null && ` · ${watts(s.power.dramW)}`}
       </T>
       <T x={P.x} y={under(P, u * VALUE, 1)} s={f}>
-        8 channels, 128 bits wide
+        {simple ? 'Every worker shares this one desk' : '8 channels, 128 bits wide'}
       </T>
     </g>
   )
@@ -170,6 +184,7 @@ const rectAttrs = (r: Rect) => ({ x: r.x, y: r.y, width: r.w, height: r.h })
 
 function Ssd({ g, s }: { g: Geometry; s: Sample }) {
   const u = unit('ssd')
+  const simple = useSimple()
   const N = g.NAND
   const D = g.DIE
   const v = u * VALUE
@@ -186,16 +201,16 @@ function Ssd({ g, s }: { g: Geometry; s: Sample }) {
         ))}
       </g>
       <T x={N.x} y={under(N, v)} s={u * VALUE} v>
-        Read {rate(s.disk.readBps)}
+        {simple ? 'Opening' : 'Read'} {rate(s.disk.readBps)}
       </T>
       <T x={N.x} y={under(N, v, 1)} s={u * VALUE} v>
-        Write {rate(s.disk.writeBps)}
+        {simple ? 'Saving' : 'Write'} {rate(s.disk.writeBps)}
       </T>
       <T x={N.x} y={under(N, v, 2)} s={u * LABEL}>
-        Controller in the chip
+        {simple ? 'Run by the brain' : 'Controller in the chip'}
       </T>
       <T x={N.x} y={under(N, v, 3)} s={u * LABEL}>
-        Encrypts as it writes
+        {simple ? 'Locked so only you can read it' : 'Encrypts as it writes'}
       </T>
     </g>
   )
@@ -203,6 +218,7 @@ function Ssd({ g, s }: { g: Geometry; s: Sample }) {
 
 function Wifi({ g, s }: { g: Geometry; s: Sample }) {
   const u = unit('wifi')
+  const simple = useSimple()
   const r = g.WIFI
   const ant = box(g.L.antennas)
   const fy = ant.y + 6.5
@@ -230,19 +246,19 @@ function Wifi({ g, s }: { g: Geometry; s: Sample }) {
         </g>
       ))}
       <T x={r.x + r.w / 2} y={fy + u * 1.4} s={u * LABEL} a="middle">
-        Antenna cables
+        {simple ? 'Wires to the antennas' : 'Antenna cables'}
       </T>
       <T x={r.x} y={under(r, v)} s={u * VALUE} v>
-        Down {rate(s.net.rxBps)}
+        {simple ? 'Downloading' : 'Down'} {rate(s.net.rxBps)}
       </T>
       <T x={r.x} y={under(r, v, 1)} s={u * VALUE} v>
-        Up {rate(s.net.txBps)}
+        {simple ? 'Uploading' : 'Up'} {rate(s.net.txBps)}
       </T>
       <T x={r.x} y={under(r, v, 2)} s={u * LABEL}>
-        Wi-Fi 7, Bluetooth 6
+        {simple ? 'Wi-Fi and Bluetooth radio' : 'Wi-Fi 7, Bluetooth 6'}
       </T>
       <T x={r.x} y={under(r, v, 3)} s={u * LABEL}>
-        Under a shield can
+        {simple ? 'A metal lid keeps out noise' : 'Under a shield can'}
       </T>
     </g>
   )
@@ -250,6 +266,7 @@ function Wifi({ g, s }: { g: Geometry; s: Sample }) {
 
 function Power({ g, s }: { g: Geometry; s: Sample }) {
   const u = unit('power')
+  const simple = useSimple()
   const M = g.PMU
   const pmics = grid(2, sub(M, [0.04, 0.06, 0.62, 0.46]), 5)
   const charger = sub(M, [0.68, 0.06, 0.96, 0.4])
@@ -269,7 +286,7 @@ function Power({ g, s }: { g: Geometry; s: Sample }) {
       {ports.slice(0, 2).map((p, i) => (
         <path key={i} d={`M ${p.x + 14} ${p.y + p.h / 2} H ${bus}`} className={`dt-pwr ${b?.acAttached ? 'on' : ''}`} />
       ))}
-      {['MagSafe 3', 'USB-C', 'USB-C'].map((n, i) => (
+      {(simple ? ['Magnetic charger', 'USB-C', 'USB-C'] : ['MagSafe 3', 'USB-C', 'USB-C']).map((n, i) => (
         <T key={i} x={ports[i].x + 15} y={ports[i].y + ports[i].h / 2 - 1.6} s={u * LABEL}>
           {n}
         </T>
@@ -280,7 +297,7 @@ function Power({ g, s }: { g: Geometry; s: Sample }) {
       {pmics.map((r, i) => (
         <g key={i}>
           <rect {...rectAttrs(inset(r, 1.2))} fill="url(#dt-bga)" opacity="0.35" />
-          <Lines r={r} s={u * LABEL} lines={['PMIC']} />
+          <Lines r={r} s={u * LABEL} lines={[simple ? 'Converter' : 'PMIC']} />
         </g>
       ))}
       <Lines r={charger} s={u * LABEL} lines={['Charger']} />
@@ -289,13 +306,13 @@ function Power({ g, s }: { g: Geometry; s: Sample }) {
       ))}
       {capRow(M.x + 4, M.x + M.w - 4, (pmics[0].y + pmics[0].h + inductors[0].y) / 2 - 0.6, 16, 2.4, 1.2)}
       <T x={M.x + 3} y={under(M, v)} s={u * VALUE} v>
-        System {watts(s.power.systemW)}
+        {simple ? 'Using' : 'System'} {watts(s.power.systemW)}
       </T>
       <T x={M.x + 3} y={under(M, v, 1)} s={u * VALUE} v>
         {b == null ? 'No battery' : b.acAttached ? `Adapter ${b.adapterW != null ? `${b.adapterW} W` : 'plugged in'}` : 'On battery'}
       </T>
       <T x={M.x + 3} y={under(M, v, 2)} s={u * LABEL}>
-        Coils and capacitors smooth each rail
+        {simple ? 'Smooths power into a steady flow' : 'Coils and capacitors smooth each rail'}
       </T>
     </g>
   )
@@ -303,6 +320,7 @@ function Power({ g, s }: { g: Geometry; s: Sample }) {
 
 function Speakers({ g, s }: { g: Geometry; s: Sample }) {
   const u = unit('speakers')
+  const simple = useSimple()
   const on = !!s.sensors?.audioPlaying
   return (
     <g>
@@ -324,19 +342,19 @@ function Speakers({ g, s }: { g: Geometry; s: Sample }) {
             <circle cx={tw.cx} cy={tw.cy} r={3.4} className="dt-magnet" />
             {/* Above the ring: the logic board starts right under the speakers. */}
             <T x={r.x + r.w / 2} y={r.y - 11} s={u * LABEL} a="middle">
-              {outer ? 'Tweeter, then woofer' : 'Woofer, then tweeter'}
+              {simple ? (outer ? 'Small speaker, then big one' : 'Big speaker, then small one') : outer ? 'Tweeter, then woofer' : 'Woofer, then tweeter'}
             </T>
           </g>
         )
       })}
       <T x={300} y={g.SPEAKERS[0].h / 2 + u * LABEL * 0.35} s={u * LABEL} a="middle">
-        Both fire into the hinge gap
+        {simple ? 'Sound comes out by the hinge' : 'Both fire into the hinge gap'}
       </T>
     </g>
   )
 }
 
-/** Drawn inside the part's layer SVG, which styles.css already rasterises at four times its size while focused. */
+/** Drawn inside the part's layer SVG, which styles.css already rasterises at twice its size while focused. */
 const Closeup = ({ className, children }: { className?: string; children: ReactNode }) => <g className={`closeup ${className ?? ''}`}>{children}</g>
 
 export function BoardDetail({ k, g, hw, s }: { k: PartKey; g: Geometry; hw: Hardware; s: Sample }) {
@@ -374,13 +392,14 @@ function packGeometry(g: Geometry) {
 
 export function BatteryDetail({ g, b, tempC }: { g: Geometry; b: NonNullable<Sample['battery']>; tempC: number | null }) {
   const u = unit('battery')
+  const simple = useSimple()
   const f = u * LABEL
   const { bms, tabs, conn } = packGeometry(g)
   const [A, B, C, Dd] = g.CELLS
   const by = bms.y + bms.h
   const link = bms.y + bms.h * 0.72
   const state = b.charging ? `Charging${b.watts ? ` ${watts(Math.abs(b.watts))}` : ''}` : b.chargeHeld ? 'Held' : b.acAttached ? 'On power' : 'On battery'
-  const facts = [b.healthPct != null && `Health ${pct(b.healthPct, 1)}`, b.cycleCount != null && `${b.cycleCount} cycles`, tempC != null && temp(tempC)].filter(Boolean)
+  const facts = [b.healthPct != null && `Health ${pct(Math.min(100, b.healthPct), 1)}`, b.cycleCount != null && `${b.cycleCount} ${simple ? 'charges' : 'cycles'}`, tempC != null && temp(tempC)].filter(Boolean)
   // The trackpad sits in the gap the four cells wrap around, on the layer above; the wiring note goes there.
   const gap = { x: A.x + A.w, y: B.y + B.h, w: Dd.x - A.x - A.w, h: g.TRAY.y + g.TRAY.h - B.y - B.h }
   return (
@@ -411,10 +430,10 @@ export function BatteryDetail({ g, b, tempC }: { g: Geometry; b: NonNullable<Sam
       <rect x={bms.x + bms.w * 0.62 + 20} y={bms.y + 2} width={8} height={bms.h - 6} rx="1" className="dt-ic" />
       <rect x={bms.x + bms.w * 0.62 + 31} y={bms.y + 2} width={8} height={bms.h - 6} rx="1" className="dt-ic" />
       <T x={bms.x + 4} y={bms.y - 7} s={f}>
-        Battery management board
+        {simple ? "The battery's own guard chip" : 'Battery management board'}
       </T>
       <T x={A.x + A.w / 2} y={A.y + A.h * 0.5 - u * 2.4} s={f} a="middle">
-        Group 1
+        {simple ? 'Cell 1' : 'Group 1'}
       </T>
       <T x={A.x + A.w / 2} y={A.y + A.h * 0.5 + u * 0.4} s={u * 2.4} a="middle" v>
         {Math.round(b.percent)}%
@@ -423,20 +442,20 @@ export function BatteryDetail({ g, b, tempC }: { g: Geometry; b: NonNullable<Sam
         {state}
       </T>
       <T x={B.x + B.w / 2} y={B.y + B.h / 2 + f * 0.35} s={f} a="middle">
-        Group 2a
+        {simple ? 'Cell 2' : 'Group 2a'}
       </T>
       <T x={C.x + C.w / 2} y={C.y + C.h / 2 + f * 0.35} s={f} a="middle">
-        Group 2b
+        {simple ? 'Cell 3' : 'Group 2b'}
       </T>
       <T x={Dd.x + Dd.w / 2} y={Dd.y + Dd.h * 0.5 - u * 2.4} s={f} a="middle">
-        Group 3
+        {simple ? 'Cell 4' : 'Group 3'}
       </T>
       {facts.map((l, i) => (
         <T key={i} x={Dd.x + Dd.w / 2} y={Dd.y + Dd.h * 0.5 + u * VALUE * 1.2 * i} s={u * VALUE} a="middle" v>
           {l}
         </T>
       ))}
-      <Lines r={{ ...gap, h: gap.h * 0.6 }} s={f} lines={['2a and 2b in parallel,', '3 groups in series,', 'about 11.6 V']} />
+      <Lines r={{ ...gap, h: gap.h * 0.6 }} s={f} lines={simple ? ['Four cells team up', 'to power the Mac'] : ['2a and 2b in parallel,', '3 groups in series,', 'about 11.6 V']} />
     </Closeup>
   )
 }
@@ -491,6 +510,7 @@ export function ChargeFlow({ g, paused, stamp }: { g: Geometry; paused: boolean;
 
 export function TrackpadDetail({ g }: { g: Geometry }) {
   const u = unit('trackpad')
+  const simple = useSimple()
   const tp = g.TRACKPAD
   const grid8 = inset(tp, 7)
   const gauge = (x: number, y: number) => ({ x, y, w: 16, h: 9 })
@@ -514,17 +534,17 @@ export function TrackpadDetail({ g }: { g: Geometry }) {
       <rect {...rectAttrs({ x: te.x + te.w - 25, y: te.y + 3, w: 22, h: te.h - 6 })} rx="1.5" className="dt-magnet" />
       <path d={serpentine({ x: te.x + 32, y: te.y + 3.5, w: te.w - 64, h: te.h - 7 }, 24)} className="dt-winding" />
       <T x={te.x + te.w / 2} y={te.y + te.h + u * VALUE * 1.4} s={u * VALUE} a="middle">
-        Taptic Engine
+        {simple ? 'Click buzzer' : 'Taptic Engine'}
       </T>
       <T x={te.x + te.w / 2} y={te.y + te.h + u * VALUE * 1.4 + u * LABEL * LEAD} s={u * LABEL} a="middle">
-        A shaking weight fakes the click
+        {simple ? 'It taps so you feel a click' : 'A shaking weight fakes the click'}
       </T>
-      <Lines r={{ x: tp.x, y: tp.y + tp.h * 0.6, w: tp.w, h: u * 3 }} s={u * LABEL} lines={['Touch grid under the glass', 'Gauges in each corner feel the press']} />
+      <Lines r={{ x: tp.x, y: tp.y + tp.h * 0.6, w: tp.w, h: u * 3 }} s={u * LABEL} lines={simple ? ['Feels where your fingers are', 'The corners feel how hard you press'] : ['Touch grid under the glass', 'Gauges in each corner feel the press']} />
       <T x={tp.x + 29} y={tp.y + tp.h - 11.5} s={u * LABEL}>
-        Strain gauge
+        {simple ? 'Press sensor' : 'Strain gauge'}
       </T>
       <T x={tp.x + tp.w - 29} y={tp.y + tp.h - 11.5} s={u * LABEL} a="end">
-        Strain gauge
+        {simple ? 'Press sensor' : 'Strain gauge'}
       </T>
     </Closeup>
   )
@@ -534,11 +554,12 @@ export function TrackpadDetail({ g }: { g: Geometry }) {
 
 export function DisplayDetail({ g, brightness }: { g: Geometry; brightness: number | null }) {
   const u = unit('display')
+  const simple = useSimple()
   const p = box(g.L.panel)
   const bottom = p.y + p.h
   const lit = brightness == null ? 0.5 : 0.15 + 0.85 * brightness
   // Peeled corner, outermost first.
-  const layers = ['Cover glass', 'LCD and color filters', 'Light guide and films', 'Reflector']
+  const layers = simple ? ['Glass', 'Picture layer', 'Light spreader', 'Mirror'] : ['Cover glass', 'LCD and color filters', 'Light guide and films', 'Reflector']
   const loupe = { cx: p.x + 85, cy: p.y + 70, r: 42 }
   const v = u * VALUE
   const f = u * LABEL
@@ -558,10 +579,10 @@ export function DisplayDetail({ g, brightness }: { g: Geometry; brightness: numb
       <rect x={loupe.cx - loupe.r} y={loupe.cy - loupe.r} width={loupe.r * 2} height={loupe.r * 2} fill="url(#dt-px)" clipPath="url(#dt-loupe)" />
       <circle cx={loupe.cx} cy={loupe.cy} r={loupe.r} className="dt-glass" />
       <T x={loupe.cx + loupe.r + 8} y={ty} s={v}>
-        224 pixels per inch
+        {simple ? 'Tiny dots make the picture' : '224 pixels per inch'}
       </T>
       <T x={loupe.cx + loupe.r + 8} y={ty + v * LEAD} s={f}>
-        Red, green and blue stripes
+        {simple ? 'Each dot mixes red, green and blue' : 'Red, green and blue stripes'}
       </T>
       {brightness != null && (
         <T x={loupe.cx + loupe.r + 8} y={ty + v * LEAD + f * LEAD} s={v} v>
@@ -588,7 +609,7 @@ export function DisplayDetail({ g, brightness }: { g: Geometry; brightness: numb
         ))}
       </g>
       <T x={p.x + p.w - 12} y={bottom - 12} s={f} a="end">
-        LED backlight strip
+        {simple ? 'Lights along the bottom' : 'LED backlight strip'}
       </T>
     </Closeup>
   )
@@ -596,6 +617,7 @@ export function DisplayDetail({ g, brightness }: { g: Geometry; brightness: numb
 
 export function CameraDetail({ g, on, isp }: { g: Geometry; on: boolean; isp: number | null }) {
   const u = unit('camera')
+  const simple = useSimple()
   const n = box(g.L.notch)
   const cx = n.x + n.w / 2
   const cy = n.y + n.h / 2
@@ -627,9 +649,9 @@ export function CameraDetail({ g, on, isp }: { g: Geometry; on: boolean; isp: nu
         {on ? 'On: camera in use' : 'Off'}
       </T>
       <T x={cx + 17} y={ly + v * LEAD + f * LEAD} s={f}>
-        Wired to the camera
+        {simple ? 'Always on when the camera is' : 'Wired to the camera'}
       </T>
-      {on && isp != null && isp > 0 && (
+      {!simple && on && isp != null && isp > 0 && (
         <T x={cx + 17} y={ly + v * LEAD + f * LEAD * 2} s={v} v>
           Image processor {isp.toFixed(1)} GB/s
         </T>
@@ -643,13 +665,13 @@ export function CameraDetail({ g, on, isp }: { g: Geometry; on: boolean; isp: nu
       ))}
       <rect x={cx - 5.5} y={stackY + 8.4} width={11} height={1.4} rx="0.2" className={`dt-sensor ${on ? 'on' : ''}`} />
       <T x={cx} y={ly} s={f} a="middle">
-        12 MP camera
+        {simple ? 'Camera' : '12 MP camera'}
       </T>
       <T x={cx - 7} y={stackY + 3.2 + f * 0.35} s={f} a="end">
         Lenses
       </T>
       <T x={cx - 7} y={stackY + 9.1 + f * 0.35} s={f} a="end">
-        Image sensor
+        {simple ? 'Catches the light' : 'Image sensor'}
       </T>
     </Closeup>
   )
