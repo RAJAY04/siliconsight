@@ -14,6 +14,16 @@ It's free and open source under the Apache 2.0 license. The course and the labs 
 
 ## Run it
 
+The quickest way, on any Apple Silicon Mac with macOS 14 or later:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/RAJAY04/siliconsight/main/install.sh | bash
+```
+
+It downloads the latest release into `~/.siliconsight`, starts it and opens the page in your browser. It needs no sudo, Xcode or Node.js. Ctrl-C stops it, `~/.siliconsight/siliconsight` starts it again, and `rm -rf ~/.siliconsight` removes it. The script is short, so read [install.sh](install.sh) first if you want to see what it does.
+
+### From source
+
 You need:
 
 - an Apple Silicon Mac (M1 or later)

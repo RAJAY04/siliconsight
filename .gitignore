@@ -6,3 +6,4 @@ reader/.swiftpm
 *.log
 .claude/
 .vscode/
+dist/
