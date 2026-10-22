@@ -1,0 +1,129 @@
+/* Threads and the scheduler. Reuses .q-* (--q) and .cx-table from CoreXray.css. */
+.sc-scene text {
+  font-family: var(--sans);
+  font-size: 13px;
+  fill: var(--text);
+}
+.sc-head {
+  font-weight: 650;
+  font-size: 14px !important;
+}
+.sc-scene .sc-dim,
+.sc-dim {
+  fill: var(--muted);
+  font-weight: 400;
+  font-size: 12px;
+}
+.sc-mono {
+  font-family: var(--mono) !important;
+  font-size: 12px !important;
+}
+.sc-lane {
+  fill: var(--bg-2);
+  stroke: var(--line);
+}
+.sc-core {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+  transition: fill 0.3s, stroke 0.3s;
+}
+.sc-row.k-E .sc-core.busy {
+  stroke: var(--ok);
+}
+.sc-core.busy {
+  stroke: var(--accent);
+  fill: color-mix(in srgb, var(--accent) 10%, var(--panel-solid));
+}
+.sc-core.big {
+  stroke-width: 2;
+}
+.sc-core-t {
+  font-weight: 600;
+  font-size: 12px !important;
+}
+.sc-core-on {
+  font-family: var(--mono) !important;
+  font-size: 11px !important;
+  fill: var(--muted) !important;
+}
+.sc-bar rect,
+.sc-pill rect,
+.sc-qrow rect,
+.sc-thread > rect {
+  fill: color-mix(in srgb, var(--q) 22%, var(--panel-solid));
+  stroke: color-mix(in srgb, var(--q) 70%, transparent);
+}
+.sc-bar text {
+  font-size: 11px !important;
+}
+.sc-now {
+  stroke: var(--text);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+.sc-pri {
+  font-family: var(--mono) !important;
+  fill: var(--muted) !important;
+}
+.sc-kernel rect {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+}
+.sc-kernel-k {
+  font-weight: 700;
+}
+.sc-proc {
+  fill: color-mix(in srgb, var(--accent) 5%, var(--bg-2));
+  stroke: var(--line-strong);
+  stroke-width: 2;
+}
+.sc-mem rect {
+  fill: var(--panel-solid);
+  stroke: var(--line);
+}
+.sc-own {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+  stroke-dasharray: 4 3;
+}
+.sc-frame {
+  fill: color-mix(in srgb, var(--q) 30%, var(--panel-solid));
+  stroke: var(--line-strong);
+}
+.sc-dot {
+  fill: var(--line-strong);
+  transition: r 0.2s;
+}
+.sc-dot.on {
+  fill: var(--accent);
+}
+.sc-rq {
+  fill: color-mix(in srgb, var(--accent) 6%, var(--panel-solid));
+  stroke: var(--accent);
+  stroke-dasharray: 6 4;
+}
+.sc-big {
+  font: 600 22px var(--mono) !important;
+}
+.sc-warn {
+  fill: var(--crit) !important;
+  font-weight: 600;
+}
+.sc-lock rect {
+  fill: var(--warn);
+  stroke: var(--bg);
+}
+.sc-lock path {
+  fill: none;
+  stroke: var(--warn);
+  stroke-width: 3;
+}
+.sc-seg {
+  flex-wrap: wrap;
+}
+.sc-x {
+  padding: 2px 8px;
+}
+.sc-sim {
+  overflow-x: auto;
+}

@@ -1,0 +1,11 @@
+SiliconSight
+Copyright 2026 the SiliconSight contributors
+
+This product is licensed under the Apache License, Version 2.0. See LICENSE.
+
+The per-chip IOReport and CLPC counter IDs in reader/Sources/macviz/IOReport.swift
+come from macmon by vladkens (https://github.com/vladkens/macmon), MIT License,
+Copyright (c) 2024 vladkens.
+
+Not affiliated with Apple. Mac, MacBook Air, MacBook Pro, Apple Silicon and macOS
+are trademarks of Apple Inc.

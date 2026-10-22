@@ -1,0 +1,302 @@
+/* A web page, packet by packet */
+.pk-scene text {
+  font-family: var(--sans);
+  font-size: 13px;
+  fill: var(--text);
+}
+.pk-scene .pk-sub {
+  fill: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.pk-scene .pk-note {
+  fill: var(--muted);
+  font-size: 14px;
+}
+.pk-scene .pk-note.hot {
+  fill: var(--warn);
+  font-weight: 600;
+}
+.pk-scene .pk-note.live {
+  fill: var(--ok);
+  font-family: var(--mono);
+}
+.pk-scene .pk-mono {
+  font-family: var(--mono);
+  fill: var(--accent);
+  font-weight: 650;
+}
+.pk-link {
+  stroke: var(--line-strong);
+  stroke-width: 3;
+  stroke-dasharray: 6 6;
+  fill: none;
+}
+.pk-link.open {
+  stroke: color-mix(in srgb, var(--accent) 45%, var(--line-strong));
+  stroke-dasharray: none;
+}
+.pk-link.dns {
+  stroke-width: 2;
+}
+.pk-node rect,
+.pk-cloud ellipse {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+.pk-node.mac rect {
+  stroke: var(--accent);
+}
+.pk-node.hot rect {
+  stroke: var(--warn);
+  stroke-width: 2;
+}
+.pk-scene .pk-node-t {
+  font-weight: 650;
+  font-size: 14px;
+}
+.pk-scene .pk-node-s {
+  fill: var(--faint);
+  font-size: 11.5px;
+}
+.pk-lock rect {
+  fill: var(--ok);
+}
+.pk-lock path {
+  fill: none;
+  stroke: var(--ok);
+  stroke-width: 2;
+}
+.pk-scene .pk-lock text {
+  fill: var(--ok);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Moving messages */
+.pk-token rect {
+  fill: var(--c, var(--accent));
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+.pk-scene .pk-token > text {
+  font: 700 12px var(--mono);
+  fill: var(--on-accent);
+}
+.pk-token.dns {
+  --c: var(--warn);
+}
+.pk-token.tcp {
+  --c: var(--accent);
+}
+.pk-token.tls {
+  --c: var(--accent-alt);
+}
+.pk-token.data {
+  --c: var(--ok);
+}
+.pk-token.ack {
+  --c: var(--muted);
+}
+.pk-token.rtx {
+  --c: var(--warn);
+}
+.pk-token.lost rect {
+  fill: var(--crit);
+  opacity: 0.6;
+}
+.pk-x {
+  stroke: var(--crit);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.pk-scene .pk-token > .pk-key {
+  font: 13px var(--sans);
+  fill: var(--muted);
+}
+
+/* Bottom panels */
+.pk-scene .pk-log {
+  font-size: 14px;
+}
+.pk-scene .pk-arrow {
+  font-weight: 700;
+}
+.pk-log.dns .pk-arrow {
+  fill: var(--warn);
+}
+.pk-log.tcp .pk-arrow {
+  fill: var(--accent);
+}
+.pk-log.tls .pk-arrow {
+  fill: var(--accent-alt);
+}
+.pk-bar {
+  fill: var(--panel-solid);
+  stroke: var(--accent);
+}
+.pk-scene .pk-url {
+  font: 16px var(--mono);
+}
+.pk-tick {
+  stroke: var(--faint);
+}
+.pk-layer rect {
+  fill: color-mix(in srgb, var(--c) 9%, var(--panel-solid));
+  stroke: var(--c);
+  stroke-width: 1.5;
+}
+.pk-layer.l0 {
+  --c: var(--faint);
+}
+.pk-layer.l1 {
+  --c: var(--warn);
+}
+.pk-layer.l2 {
+  --c: var(--accent);
+}
+.pk-layer.l3 {
+  --c: var(--accent-alt);
+}
+.pk-layer.l4 {
+  --c: var(--ok);
+}
+.pk-scene .pk-layer-n {
+  font-weight: 650;
+  font-size: 13.5px;
+}
+.pk-scene .pk-layer-b {
+  font: 12.5px var(--mono);
+  fill: var(--muted);
+}
+.pk-slot rect {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-dasharray: 4 4;
+}
+.pk-scene .pk-slot text {
+  font: 700 15px var(--mono);
+  fill: var(--faint);
+}
+.pk-slot.have rect {
+  fill: var(--ok);
+  stroke: var(--ok);
+  stroke-dasharray: none;
+}
+.pk-slot.rtx rect {
+  fill: var(--warn);
+  stroke: var(--warn);
+  stroke-dasharray: none;
+}
+.pk-scene .pk-slot.have text,
+.pk-scene .pk-slot.rtx text {
+  fill: var(--on-accent);
+}
+.pk-slot.gap rect {
+  stroke: var(--crit);
+  stroke-width: 2;
+}
+.pk-scene .pk-slot.gap text {
+  fill: var(--crit);
+}
+.pk-wave {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+/* Try it */
+.pk-range input {
+  width: min(280px, 78vw);
+  accent-color: var(--accent);
+}
+.pk-range b {
+  color: var(--text);
+}
+.pk-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 14px 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.pk-stats b {
+  font-size: 20px;
+  color: var(--text);
+  margin-right: 4px;
+}
+.pk-packets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 4px 8px;
+  align-items: center;
+}
+.pk-pkt {
+  display: flex;
+  height: 14px;
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 6px;
+}
+.pk-h {
+  flex: 0 0 auto;
+  background: var(--warn);
+}
+.pk-p {
+  flex: 1;
+  background: var(--accent);
+}
+.pk-more {
+  font-size: 12px;
+  color: var(--faint);
+}
+.pk-key-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.pk-h-key,
+.pk-p-key {
+  position: relative;
+  padding-left: 14px;
+}
+.pk-h-key::before,
+.pk-p-key::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-top: -5px;
+  border-radius: 2px;
+  background: var(--warn);
+}
+.pk-p-key::before {
+  background: var(--accent);
+}
+.pk-h4 {
+  margin: 18px 0 0;
+  font-size: 15px;
+}
+.pk-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 12px;
+  align-items: center;
+}
+.pk-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--ok);
+}
+.pk-dot.again {
+  background: var(--crit);
+}

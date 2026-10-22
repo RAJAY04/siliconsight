@@ -1,0 +1,190 @@
+/* Unified memory lab */
+.um-scene text {
+  font-family: var(--sans);
+  font-size: 12px;
+  fill: var(--text);
+}
+.um-head {
+  font-weight: 650;
+  font-size: 15px !important;
+}
+.um-name {
+  font-weight: 600;
+  font-size: 13px !important;
+}
+.um-sub {
+  fill: var(--muted) !important;
+  font-size: 11.5px !important;
+}
+.um-bw {
+  font-family: var(--mono) !important;
+}
+.um-note {
+  font-size: 13px !important;
+  fill: var(--muted) !important;
+}
+.um-divider {
+  stroke: var(--line-strong);
+  stroke-dasharray: 4 6;
+}
+.um-block rect,
+.um-mem > rect:first-child {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+  transition: stroke 0.3s, fill 0.3s;
+}
+.um-block.lit rect,
+.um-mem.lit > rect:first-child {
+  stroke: var(--accent);
+  fill: color-mix(in srgb, var(--accent) 12%, var(--panel-solid));
+}
+.um-chip {
+  fill: color-mix(in srgb, var(--muted) 14%, transparent);
+  stroke: var(--line-strong);
+}
+.um-fill {
+  fill: color-mix(in srgb, var(--ok) 34%, transparent);
+  stroke: var(--ok);
+}
+.um-card > rect,
+.um-pkg > rect {
+  fill: color-mix(in srgb, var(--bg-2) 60%, transparent);
+  stroke: var(--line-strong);
+  stroke-dasharray: 6 4;
+}
+.um-wide {
+  stroke: var(--accent-alt);
+  stroke-width: 10;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+.um-link line {
+  stroke: var(--line-strong);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+.um-link.on line {
+  stroke: var(--warn);
+}
+.um-fabric line {
+  stroke: var(--line-strong);
+  stroke-width: 4;
+}
+.um-fabric rect {
+  fill: color-mix(in srgb, var(--accent-alt) 14%, var(--panel-solid));
+  stroke: var(--accent-alt);
+}
+.um-fabric .um-wide {
+  stroke-width: 10;
+  stroke: var(--accent-alt);
+}
+.um-token {
+  fill: var(--ok);
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+.um-token.ptr rect {
+  fill: var(--accent);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+.um-token.result rect {
+  fill: var(--warn);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+g.um-token {
+  fill: none;
+  stroke: none;
+}
+.um-scene .um-token text {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 11.5px;
+  fill: var(--on-accent);
+}
+.um-track {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+}
+.um-seg rect {
+  fill: var(--accent);
+}
+.um-seg.copy rect {
+  fill: var(--warn);
+}
+.um-scene .um-seg text {
+  font-size: 11.5px;
+  font-weight: 650;
+  fill: var(--on-accent);
+}
+.um-clock-name {
+  font-weight: 600;
+}
+.um-scene .um-clock-t {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 14px;
+}
+.um-cap rect.pc {
+  fill: var(--accent-alt);
+}
+.um-cap rect.mac {
+  fill: var(--ok);
+}
+.um-scene .um-cap-v {
+  font-family: var(--mono);
+  fill: var(--muted);
+}
+.um-scene .um-cap-note {
+  font-size: 12px;
+}
+/* Try it */
+.um-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.um-presets .lab-btn[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+.um-table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+.um-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.um-table th,
+.um-table td {
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.um-table thead th {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--faint);
+}
+.um-table tbody th {
+  font-weight: 600;
+}
+.um-mac-row {
+  background: var(--accent-soft);
+}
+.um-fit.fits {
+  color: var(--ok);
+}
+.um-fit.tight {
+  color: var(--warn);
+}
+.um-fit.no {
+  color: var(--crit);
+}

@@ -1,0 +1,241 @@
+/* Guess the Watts (games/Watts.tsx). */
+.watts-intro p {
+  margin: 0;
+}
+.watts-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: w;
+}
+.watts-list li {
+  counter-increment: w;
+  padding: 4px 12px;
+  border-radius: 99px;
+  border: 1px solid var(--line-strong);
+  font-size: 13px;
+}
+.watts-list li::before {
+  content: counter(w) '. ';
+  color: var(--faint);
+  font-family: var(--mono);
+}
+.watts-task {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-solid);
+}
+.watts-task p {
+  margin: 0;
+}
+.watts-task-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+.watts-task-head h4 {
+  margin: 0;
+  font-size: 18px;
+}
+.watts-round {
+  color: var(--faint);
+  font-size: 13px;
+}
+.watts-tag {
+  font-size: 11.5px;
+  padding: 1px 8px;
+  border-radius: 99px;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.watts-cmds {
+  display: grid;
+  gap: 6px;
+}
+.watts-cmd {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+.watts-cmd-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.watts-cmd code,
+.watts-reveal code {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--bg-2);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .watts-cmd {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .watts-cmd-label {
+    grid-column: 1 / -1;
+  }
+}
+.watts-meter {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.watts-track {
+  fill: var(--line);
+}
+.watts-fill {
+  fill: var(--accent);
+  opacity: 0.55;
+  transition: width 0.25s linear;
+}
+.watts-tick {
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+.watts-tick-label {
+  fill: var(--faint);
+  font: 15px var(--mono);
+  text-anchor: middle;
+}
+.watts-guess,
+.watts-actual {
+  transition: transform 0.6s cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+.watts-guess path {
+  fill: var(--accent);
+}
+.watts-guess text,
+.watts-actual text {
+  font: 600 16px var(--sans);
+  text-anchor: middle;
+}
+.watts-guess text {
+  fill: var(--accent);
+}
+.watts-actual path {
+  fill: var(--warn);
+}
+.watts-actual text {
+  fill: var(--warn);
+}
+.watts-actual {
+  animation: watts-in 0.5s ease-out;
+}
+@keyframes watts-in {
+  from {
+    opacity: 0;
+  }
+}
+.watts-counting {
+  fill: var(--muted);
+  font: 15px var(--sans);
+  text-anchor: middle;
+}
+.watts-slider {
+  display: grid;
+  gap: 6px;
+  justify-self: center;
+  width: min(520px, 100%);
+  font-size: 14px;
+}
+.watts-slider b {
+  font-size: 18px;
+}
+.watts-reveal {
+  display: grid;
+  gap: 10px;
+}
+.watts-reveal p {
+  margin: 0;
+}
+.watts-verdict {
+  text-align: center;
+  font-size: 16px;
+}
+.watts-plus {
+  color: var(--ok);
+}
+.watts-stack {
+  display: flex;
+  height: 18px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--line);
+}
+.watts-stack span {
+  flex-basis: 0;
+  min-width: 2px;
+}
+.wb-cpu {
+  background: var(--accent);
+}
+.wb-gpu {
+  background: var(--accent-alt);
+}
+.wb-ane {
+  background: var(--ok);
+}
+.wb-dram {
+  background: var(--warn);
+}
+.wb-rest {
+  background: var(--faint);
+}
+.watts-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+.watts-legend li {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.watts-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  align-self: center;
+}
+.watts-summary {
+  display: grid;
+  gap: 8px;
+  overflow-x: auto;
+}
+.watts-summary table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.watts-summary th,
+.watts-summary td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+.watts-summary th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.watts-summary td.num,
+.watts-summary th:not(:first-child) {
+  text-align: right;
+}

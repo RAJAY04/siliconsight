@@ -1,6 +1,6 @@
 # How it works
 
-MacOS visualizer has two halves. The reader (`reader/`, Swift) samples the hardware once a second and sends JSON over a WebSocket on 127.0.0.1:7878. The page (`web/`, React) draws the exploded Mac from those samples and keeps the last 10 minutes in memory for the sparklines. The message shape is in [CONTRACT.md](../CONTRACT.md).
+SiliconSight has two halves. The reader (`reader/`, Swift) samples the hardware once a second and sends JSON over a WebSocket on 127.0.0.1:7878. The page (`web/`, React) draws the exploded Mac from those samples and keeps the last 10 minutes in memory for the sparklines. The message shape is in [CONTRACT.md](../CONTRACT.md).
 
 This page goes part by part: what you see, and where the number behind it comes from. For the exact IOReport channel names and every field that can be null, see [reader/README.md](../reader/README.md).
 

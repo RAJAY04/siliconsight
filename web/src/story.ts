@@ -1,4 +1,4 @@
-import type { Hardware, Sample } from './types.ts'
+import type { Hardware, Sample, Sensors } from './types.ts'
 import { bytes } from './format.ts'
 
 export type StoryKind = 'llm' | 'compile' | 'video' | 'indexing' | 'idle' | 'busy'
@@ -9,6 +9,8 @@ export type Story = {
   text: string
   /** A secondary line, such as a model that is loaded but not generating. */
   note?: string
+  /** Set while an app has the camera or microphone open. */
+  inUse?: string
   /** Only for kind 'llm' when the model size is known. Peak bandwidth and the ceiling are null for chips not in the table. */
   formula?: { peakGBs: number | null; modelGB: number; maxTokS: number | null; observedTokS: number | null }
 }
@@ -41,6 +43,25 @@ export const usedBytes = (s: Sample) => s.memory.totalBytes - s.memory.freeBytes
 export const socW = (s: Sample): number | null =>
   s.power.cpuW == null && s.power.gpuW == null && s.power.aneW == null ? null : (s.power.cpuW ?? 0) + (s.power.gpuW ?? 0) + (s.power.aneW ?? 0)
 
+const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+const bool = (v: unknown) => (typeof v === 'boolean' ? v : null)
+/** The sample's sensors with every missing or malformed field as null; an older reader sends none at all. */
+export function sensorsOf(s: Sample): Sensors {
+  const x: Partial<Record<keyof Sensors, unknown>> = typeof s.sensors === 'object' && s.sensors !== null ? s.sensors : {}
+  const level = (v: unknown) => {
+    const n = num(v)
+    return n == null ? null : Math.min(1, Math.max(0, n))
+  }
+  return {
+    lidAngleDeg: num(x.lidAngleDeg),
+    cameraInUse: bool(x.cameraInUse),
+    micInUse: bool(x.micInUse),
+    audioPlaying: bool(x.audioPlaying),
+    displayBrightness: level(x.displayBrightness),
+    keyboardBacklight: level(x.keyboardBacklight),
+  }
+}
+
 /** Apple's published peak unified-memory bandwidth, GB/s. For binned Max chips the faster variant. */
 const PEAK_GBS: Record<string, number> = {
   'Apple M1': 68, 'Apple M1 Pro': 200, 'Apple M1 Max': 400, 'Apple M1 Ultra': 800,
@@ -65,9 +86,17 @@ export function largestModel(s: Sample): { name: string; bytes: number | null } 
  * spike does not flip the story back and forth every second.
  */
 export function detectStory(history: Sample[], chip = ''): Story {
+  const last = history[history.length - 1]
+  if (!last) return { kind: 'idle', title: 'Waiting for data', text: 'No samples yet.' }
+  const story = loadStory(history, chip)
+  const { cameraInUse: cam, micInUse: mic } = sensorsOf(last)
+  if (cam || mic) story.inUse = `Something is using the ${cam && mic ? 'camera and the microphone' : cam ? 'camera' : 'microphone'}.`
+  return story
+}
+
+function loadStory(history: Sample[], chip: string): Story {
   const win = history.slice(-5)
   const last = win[win.length - 1]
-  if (!last) return { kind: 'idle', title: 'Waiting for data', text: 'No samples yet.' }
 
   const p = median(win.map((s) => clusterAvg(s, 'P') ?? 0))
   const e = median(win.map((s) => clusterAvg(s, 'E') ?? 0))

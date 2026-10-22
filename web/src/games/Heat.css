@@ -1,0 +1,135 @@
+/* Heat Race (games/Heat.tsx). */
+.heat-readouts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+.heat-readout {
+  display: grid;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-solid);
+}
+.heat-readout-label {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.heat-readout-value {
+  font-size: 19px;
+  font-weight: 650;
+}
+.heat-readout.warm .heat-readout-value {
+  color: var(--warn);
+}
+.heat-readout.hot {
+  border-color: var(--crit);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--crit) 25%, transparent);
+}
+.heat-readout.hot .heat-readout-value {
+  color: var(--crit);
+}
+.heat-chart {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.heat-load {
+  fill: color-mix(in srgb, var(--crit) 9%, transparent);
+}
+.heat-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.heat-axis {
+  fill: var(--faint);
+  font: 13px var(--mono);
+}
+.heat-axis-t {
+  text-anchor: end;
+}
+.heat-axis-x {
+  text-anchor: middle;
+}
+.heat-line-t,
+.heat-line-p,
+.heat-line-fan {
+  fill: none;
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.heat-line-t {
+  stroke: var(--crit);
+}
+.heat-line-p {
+  stroke: var(--accent);
+}
+.heat-line-fan {
+  stroke: var(--ok);
+  stroke-dasharray: 8 5;
+}
+.heat-dot-t {
+  fill: var(--crit);
+}
+.heat-dot-p {
+  fill: var(--accent);
+}
+.heat-dot-fan {
+  fill: var(--ok);
+}
+.heat-legend text {
+  fill: var(--muted);
+  font: 13px var(--sans);
+}
+.heat-guess line {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+}
+.heat-guess text,
+.heat-actual text {
+  font: 600 13px var(--sans);
+  text-anchor: middle;
+}
+.heat-guess text {
+  fill: var(--accent);
+}
+.heat-actual line {
+  stroke: var(--warn);
+  stroke-width: 3;
+}
+.heat-actual text {
+  fill: var(--warn);
+  paint-order: stroke;
+  stroke: var(--panel-solid);
+  stroke-width: 4px;
+}
+.heat-setup {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+.heat-slider {
+  display: grid;
+  gap: 6px;
+  width: min(520px, 100%);
+  font-size: 14px;
+}
+.heat-slider b {
+  font-size: 17px;
+}
+.heat-setup .fine {
+  margin: 0;
+  max-width: 70ch;
+  text-align: center;
+}
+.heat-stop {
+  background: var(--crit);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--crit) 35%, transparent);
+}
+.heat-note {
+  margin: 0;
+  text-align: center;
+}

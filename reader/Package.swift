@@ -8,7 +8,7 @@ let package = Package(
         .executableTarget(
             name: "macviz",
             path: "Sources/macviz",
-            linkerSettings: [.linkedFramework("IOKit"), .linkedFramework("Network")]
+            linkerSettings: [.linkedFramework("IOKit"), .linkedFramework("Network"), .linkedFramework("CoreAudio"), .linkedFramework("CoreMediaIO"), .linkedFramework("CoreWLAN")]
         ),
     ],
     swiftLanguageModes: [.v5]

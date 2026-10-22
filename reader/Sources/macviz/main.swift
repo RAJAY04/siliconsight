@@ -81,6 +81,7 @@ do {
         print("macviz listening on http://127.0.0.1:\(port)/  (WebSocket ws://127.0.0.1:\(port)/ws, web root \(webDir.standardizedFileURL.path))")
     }
 } catch { print("cannot listen on 127.0.0.1:\(port): \(error)"); exit(1) }
+queue.sync { sampler.sensors.startFast(queue: queue) { server.broadcastLossy($0) } }
 
 // Ctrl-C exits at once, even when started from a script that left SIGINT ignored. The kernel
 // closes the socket.

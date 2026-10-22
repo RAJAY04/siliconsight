@@ -1,9 +1,13 @@
 import { useState, type CSSProperties } from 'react'
 import type { Hardware, Sample } from './types.ts'
 import { NA, bytes, clamp, gpuMhz, memGB, mhz, minutes, num, pct, rate, temp, watts } from './format.ts'
-import { byApp, chipLine, recentAvg, usedBytes } from './story.ts'
+import { byApp, chipLine, recentAvg, sensorsOf, usedBytes } from './story.ts'
 import { Sparkline, Stat, Val } from './ui.tsx'
 import { DieMap } from './DieMap.tsx'
+import { InfoButton } from './Learn.tsx'
+import { useSimple } from './simple.ts'
+import { SensorMap } from './SensorMap.tsx'
+import { IoPaths, MediaEngineCard, SensorPaths, SwapPath } from './Pipelines.tsx'
 
 type P = { hw: Hardware; s: Sample; history: Sample[] }
 
@@ -16,6 +20,9 @@ export function ChipPanel({ hw, s, history }: P) {
   return (
     <div className="panel-grid chip-grid">
       <div className="card">
+        <h3>
+          Die map <InfoButton topic="soc" />
+        </h3>
         <p className="lede">{chipLine(s, hw)}</p>
         <DieMap hw={hw} s={s} onCore={setHover} />
         <div className="hover-line" aria-live="polite">
@@ -26,17 +33,19 @@ export function ChipPanel({ hw, s, history }: P) {
       <div className="card">
         <h3>Clocks, heat and power</h3>
         <div className="stats">
-          <Stat label="P-cluster" value={mhz(s.cpu.pFreqMHz)} />
-          <Stat label="E-cluster" value={mhz(s.cpu.eFreqMHz)} />
-          <Stat label="GPU" value={gpuMhz(s.gpu.freqMHz)} />
-          <Stat label="CPU temp" value={temp(s.thermal.cpuTempC)} />
-          <Stat label="GPU temp" value={temp(s.thermal.gpuTempC)} />
-          <Stat label="Thermal state" value={s.thermal.state[0].toUpperCase() + s.thermal.state.slice(1)} />
-          <Stat label="CPU power" value={watts(s.power.cpuW)} />
-          <Stat label="GPU power" value={watts(s.power.gpuW)} />
-          <Stat label="ANE power" value={watts(s.power.aneW)} />
+          <Stat label="P-cluster" value={mhz(s.cpu.pFreqMHz)} topic="dvfs" />
+          <Stat label="E-cluster" value={mhz(s.cpu.eFreqMHz)} topic="dvfs" />
+          <Stat label="GPU" value={gpuMhz(s.gpu.freqMHz)} topic="gpu" />
+          <Stat label="CPU temp" value={temp(s.thermal.cpuTempC)} topic="temperatures" />
+          <Stat label="GPU temp" value={temp(s.thermal.gpuTempC)} topic="temperatures" />
+          <Stat label="Thermal state" value={s.thermal.state[0].toUpperCase() + s.thermal.state.slice(1)} topic="thermal-state" />
+          <Stat label="CPU power" value={watts(s.power.cpuW)} topic="power" />
+          <Stat label="GPU power" value={watts(s.power.gpuW)} topic="power" />
+          <Stat label="ANE power" value={watts(s.power.aneW)} topic="neural-engine" />
         </div>
-        <h3>Top processes by CPU</h3>
+        <h3>
+          Top processes by CPU <InfoButton topic="processes" />
+        </h3>
         <ol className="procs">
           {byApp(s.topCpu, (p) => p.cpu)
             .slice(0, 6)
@@ -53,8 +62,11 @@ export function ChipPanel({ hw, s, history }: P) {
         </ol>
         <p className="fine">100% means one full core. This Mac has {hw.pCores + hw.eCores} cores, so the ceiling is {(hw.pCores + hw.eCores) * 100}%.</p>
       </div>
+      <MediaEngineCard s={s} />
       <div className="card span-2">
-        <h3>Last 60 seconds per core</h3>
+        <h3>
+          Last 60 seconds per core <InfoButton topic="scheduling" />
+        </h3>
         <CoreStrips history={history} />
       </div>
     </div>
@@ -97,6 +109,7 @@ const KIND_LABEL: Record<Kind, string> = {
 }
 
 export function MemoryPanel({ s, history }: P) {
+  const simple = useSimple()
   const m = s.memory
   const blockBytes = m.totalBytes / BLOCKS
   const appKnown = m.appBytes != null
@@ -137,7 +150,10 @@ export function MemoryPanel({ s, history }: P) {
           <p className="lede">
             {memGB(used)} of {memGB(m.totalBytes, 0)} in use. Each block is {memGB(blockBytes)}. The CPU, GPU and Neural Engine all share this one pool.
           </p>
-          <span className={`badge pressure-${m.pressure}`}>Pressure: {m.pressure}</span>
+          <span className="badge-row">
+            <span className={`badge pressure-${m.pressure}`}>Pressure: {m.pressure}</span>
+            <InfoButton topic="memory-pressure" />
+          </span>
         </div>
         <div className="mem-wrap">
           <div className="mem-grid" role="img" aria-label="Memory blocks by type">
@@ -151,7 +167,7 @@ export function MemoryPanel({ s, history }: P) {
             {labels.map((l, li) => {
                 const col = l.start % COLS
                 const span = Math.min(COLS - col, l.n)
-                if (span < 3) return null
+                if (span < 4) return null
                 const pos = { left: `${(col / COLS) * 100}%`, top: `${(Math.floor(l.start / COLS) / ROWS) * 100}%`, width: `${(span / COLS) * 100}%`, height: `${100 / ROWS}%` }
                 return (
                   <div key={l.name + l.start} className={`blk-label ${li % 2 ? 'odd' : ''}`} style={pos} aria-hidden>
@@ -165,13 +181,15 @@ export function MemoryPanel({ s, history }: P) {
               {swapBlocks > 0 ? 'spills to' : ''}
             </div>
             <div className={`ssd-tray ${swapBlocks ? 'active' : ''}`}>
-              <div className="ssd-title">SSD swap</div>
+              <div className="ssd-title">
+                {simple ? 'Overflow Storage' : 'SSD swap'} <InfoButton topic="swap" />
+              </div>
               <div className="swap-blocks">
                 {Array.from({ length: Math.min(swapBlocks, 48) }, (_, i) => (
                   <div key={i} className="blk k-swapped" style={{ animationDelay: `${(i % 8) * 0.06}s` }} />
                 ))}
               </div>
-              <div className="ssd-sub">{m.swapUsedBytes > 0 ? `${memGB(m.swapUsedBytes)} moved out of RAM` : 'No swap in use'}</div>
+              <div className="ssd-sub">{m.swapUsedBytes > 0 ? `${memGB(m.swapUsedBytes)} moved out of ${simple ? 'Desk Space' : 'RAM'}` : simple ? 'Nothing overflowing' : 'No swap in use'}</div>
             </div>
           </div>
         </div>
@@ -181,22 +199,38 @@ export function MemoryPanel({ s, history }: P) {
               <span className={`sw blk k-${k}`} />
               {k === 'app' && !appKnown ? 'Active (app memory not reported)' : KIND_LABEL[k]}
               <span className="num">{memGB(b)}</span>
+              <InfoButton topic={k === 'compressed' ? 'compression' : 'memory-kinds'} />
             </li>
           ))}
         </ul>
+        <p className="fine lab-links">
+          {simple ? 'Watch how it works: ' : 'Animated labs: '}
+          <a href="#labs/virtual-memory">{simple ? 'every app gets its own make-believe memory' : 'virtual memory'}</a>
+          {', '}
+          <a href="#labs/compress-swap">{simple ? 'when the desk runs out of room' : 'compression and swap'}</a>
+          {', '}
+          <a href="#labs/unified-memory">{simple ? 'one desk for every worker' : 'unified memory'}</a>.
+        </p>
       </div>
+      <SwapPath s={s} history={history} />
       <div className="card">
-        <h3>Memory bandwidth</h3>
+        <h3>
+          {simple ? 'Highway Speed' : 'Memory bandwidth'} <InfoButton topic="memory-interface" />
+        </h3>
         <div className="big">
           <Val v={m.bandwidthGBs == null ? NA : `${num(m.bandwidthGBs)} GB/s`} why="The reader could not read DRAM bandwidth counters." />
         </div>
         <Sparkline values={history.slice(-120).map((x) => x.memory.bandwidthGBs)} w={300} h={60} label="Bandwidth, last 2 minutes" />
         <p className="fine">Reads plus writes between the chip and its memory, last 2 minutes.</p>
-        <h3>Used memory, last 10 minutes</h3>
+        <h3>
+          Used memory, last 10 minutes <InfoButton topic="memory-kinds" />
+        </h3>
         <Sparkline values={history.map(usedBytes)} max={m.totalBytes} w={300} h={60} label="Used memory, last 10 minutes" />
       </div>
       <div className="card">
-        <h3>Top processes by memory</h3>
+        <h3>
+          Top processes by memory <InfoButton topic="processes" />
+        </h3>
         <ol className="procs">
           {byApp(s.topMem, (p) => p.bytes).map((p) => (
             <li key={p.name}>
@@ -239,7 +273,9 @@ export function BatteryPanel({ hw, s, history }: P) {
     <div className="panel-grid" style={{ '--step': sampleStep(s) } as CSSProperties}>
       <div className="card">
         <div className="batt-pct num">{Math.round(b.percent)}%</div>
-        <p className="lede">{status}</p>
+        <p className="lede">
+          {status}
+        </p>
         <div className="batt-big" aria-label={`Battery ${Math.round(b.percent)} percent`}>
           {Array.from({ length: 6 }, (_, i) => (
             <div key={i} className="batt-cell">
@@ -256,25 +292,30 @@ export function BatteryPanel({ hw, s, history }: P) {
             </div>
           )}
         </div>
-        <h3>Charge, last 10 minutes</h3>
+        <h3>
+          Charge, last 10 minutes <InfoButton topic={b.chargeHeld ? 'charge-held' : 'battery'} />
+        </h3>
         <Sparkline values={history.map((x) => x.battery?.percent ?? null)} max={100} w={600} h={44} label="Battery percent, last 10 minutes" />
       </div>
       <div className="card">
-        <h3>Where the power goes</h3>
+        <h3>
+          Where the power goes <InfoButton topic="battery-flow" />
+        </h3>
         <PowerPath b={b} systemW={recentAvg(history, (x) => x.power.systemW)} />
         <div className="stats">
-          <Stat label="Battery flow" value={flow} why="The reader could not read battery current." />
-          <Stat label="Adapter" value={b.acAttached ? watts(b.adapterW) : 'not connected'} />
+          <Stat label="Battery flow" value={flow} why="The reader could not read battery current." topic="battery-flow" />
+          <Stat label="Adapter" value={b.acAttached ? watts(b.adapterW) : 'not connected'} topic="adapter" />
           {/* A new pack can report more than its design capacity; show 100% and keep the raw figure visible. */}
           <Stat
             label="Health"
+            topic="battery-health"
             value={pct(b.healthPct == null ? null : Math.min(100, b.healthPct), 1)}
             why="Maximum capacity versus design capacity was not reported."
             sub={b.healthPct != null && b.healthPct > 100 ? <span title="Maximum capacity divided by design capacity, as reported">reported {pct(b.healthPct, 1)}</span> : undefined}
           />
-          <Stat label="Cycles" value={num(b.cycleCount)} />
-          <Stat label="Temperature" value={temp(s.thermal.batteryTempC)} />
-          <Stat label={b.charging ? 'Time to full' : 'Time left'} value={minutes(b.timeRemainingMin)} why="macOS gives no estimate right now, for example while plugged in and not charging." />
+          <Stat label="Cycles" value={num(b.cycleCount)} topic="cycles" />
+          <Stat label="Temperature" value={temp(s.thermal.batteryTempC)} topic="battery" />
+          <Stat label={b.charging ? 'Time to full' : 'Time left'} value={minutes(b.timeRemainingMin)} why="macOS gives no estimate right now, for example while plugged in and not charging." topic="battery" />
         </div>
       </div>
     </div>
@@ -314,14 +355,14 @@ function PowerPath({ b, systemW }: { b: NonNullable<Sample['battery']>; systemW:
   )
 }
 
-function IoCard({ title, a, b, la, lb, hist, sub }: { title: string; a: number; b: number; la: string; lb: string; hist: [number, number][]; sub?: string }) {
+function IoCard({ title, topic, a, b, la, lb, hist, sub }: { title: string; topic: string; a: number; b: number; la: string; lb: string; hist: [number, number][]; sub?: string }) {
   const sa = hist.reduce((t, x) => t + x[0], 0)
   const sb = hist.reduce((t, x) => t + x[1], 0)
   const top = Math.max(1, ...hist.flat())
   return (
     <div className="card">
       <h3>
-        {title}
+        {title} <InfoButton topic={topic} />
         {sub && <span className="h-sub">{sub}</span>}
       </h3>
       <div className="io-row">
@@ -350,22 +391,18 @@ function IoCard({ title, a, b, la, lb, hist, sub }: { title: string; a: number; 
 export function IoPanel({ s, history }: P) {
   return (
     <div className="panel-grid">
-      <IoCard title="SSD" a={s.disk.readBps} b={s.disk.writeBps} la="Read" lb="Written" hist={history.map((x) => [x.disk.readBps, x.disk.writeBps])} />
-      <IoCard title="Network" sub={s.net.iface ?? undefined} a={s.net.rxBps} b={s.net.txBps} la="Received" lb="Sent" hist={history.map((x) => [x.net.rxBps, x.net.txBps])} />
-      <div className="card span-2">
-        <p className="fine">
-          The SSD controller lives inside the chip; the NAND packages on the board only store data. Wi-Fi is a separate radio module with antennas routed up through the hinge.
-        </p>
-      </div>
+      <IoCard title="SSD" topic="ssd" a={s.disk.readBps} b={s.disk.writeBps} la="Read" lb="Written" hist={history.map((x) => [x.disk.readBps, x.disk.writeBps])} />
+      <IoCard title="Network" topic="network-rates" sub={s.net.iface ?? undefined} a={s.net.rxBps} b={s.net.txBps} la="Received" lb="Sent" hist={history.map((x) => [x.net.rxBps, x.net.txBps])} />
+      <IoPaths s={s} />
     </div>
   )
 }
 
 const SEGS = [
-  { k: 'cpuW', label: 'CPU', cls: 'seg-cpu' },
-  { k: 'gpuW', label: 'GPU', cls: 'seg-gpu' },
-  { k: 'aneW', label: 'Neural Engine', cls: 'seg-ane' },
-  { k: 'dramW', label: 'Memory', cls: 'seg-dram' },
+  { k: 'cpuW', label: 'CPU', cls: 'seg-cpu', topic: 'p-cores' },
+  { k: 'gpuW', label: 'GPU', cls: 'seg-gpu', topic: 'gpu' },
+  { k: 'aneW', label: 'Neural Engine', cls: 'seg-ane', topic: 'neural-engine' },
+  { k: 'dramW', label: 'Memory', cls: 'seg-dram', topic: 'memory-interface' },
 ] as const
 
 export function PowerPanel({ s, history }: P) {
@@ -375,7 +412,7 @@ export function PowerPanel({ s, history }: P) {
   const systemW = recentAvg(history, (x) => x.power.systemW)
   const other = systemW != null ? Math.max(0, systemW - sum) : null
   const total = systemW ?? sum
-  const all = [...parts, { k: 'other', label: 'Rest of system', cls: 'seg-other', v: other }]
+  const all = [...parts, { k: 'other', label: 'Rest of system', cls: 'seg-other', topic: 'power-delivery', v: other }]
   const h = history.slice(-120)
   const hTop = Math.max(5, ...h.map((x) => x.power.systemW ?? SEGS.reduce((t, g) => t + (x.power[g.k] ?? 0), 0)))
   const bw = 600
@@ -391,6 +428,9 @@ export function PowerPanel({ s, history }: P) {
   return (
     <div className="panel-grid" style={{ '--step': sampleStep(s) } as CSSProperties}>
       <div className="card span-2">
+        <h3>
+          Where the watts go <InfoButton topic="power" />
+        </h3>
         <p className="lede">
           {total > 0 ? (
             <>
@@ -412,12 +452,15 @@ export function PowerPanel({ s, history }: P) {
               <span className={`sw ${g.cls}`} />
               {g.label}
               <Val v={watts(g.v)} why={g.k === 'other' ? 'Needs total system power, which was not reported.' : undefined} />
+              <InfoButton topic={g.topic} />
             </li>
           ))}
         </ul>
       </div>
       <div className="card span-2">
-        <h3>Last 2 minutes</h3>
+        <h3>
+          Last 2 minutes <InfoButton topic="ioreport" />
+        </h3>
         <svg viewBox={`0 0 ${bw} ${bh}`} preserveAspectRatio="none" className="area" role="img" aria-label="Power by block, last 2 minutes">
           {areas.map((pts, i) => (
             <polygon key={i} points={pts} className={SEGS[i].cls} />
@@ -429,7 +472,9 @@ export function PowerPanel({ s, history }: P) {
       </div>
       {s.fans.length > 0 && (
         <div className="card span-2">
-          <h3>Fans</h3>
+          <h3>
+            Fans <InfoButton topic="cooling" />
+          </h3>
           <div className="stats">
             {s.fans.map((f, i) => (
               <Stat key={i} label={s.fans.length > 1 ? `Fan ${i + 1}` : 'Fan'} value={`${num(f.rpm)} rpm`} sub={f.minRpm != null && f.maxRpm != null ? `range ${num(f.minRpm)} to ${num(f.maxRpm)} rpm` : undefined} />
@@ -437,6 +482,38 @@ export function PowerPanel({ s, history }: P) {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+export function SensorsPanel({ s, history }: P) {
+  const simple = useSimple()
+  const lid = history.slice(-120).map((h) => sensorsOf(h).lidAngleDeg)
+  return (
+    <div className="panel-grid">
+      <div className="card span-2">
+        <h3>
+          {simple ? 'Where the sensors are' : 'Sensor map'} <InfoButton topic="sensors" />
+          <span className="h-sub">13-inch MacBook Air, positions from teardowns</span>
+        </h3>
+        <p className="lede">
+          {simple
+            ? 'Every sensor in its real spot. Each one lights up while it is in use, and the lid tilts to match yours. Tap a number to learn how it works.'
+            : 'Each sensor where it physically sits, lit by its live state, with the lid drawn at the hinge sensor\'s angle. Select a marker for its explainer. Read once a second; nothing is recorded.'}
+        </p>
+        <div className="smap-host">
+          <SensorMap s={s} />
+        </div>
+      </div>
+      <SensorPaths s={s} />
+      <div className="card span-2">
+        <h3>
+          {simple ? 'Hinge angle' : 'Lid angle'} <InfoButton topic="lid-angle" />
+          <span className="h-sub">last 2 minutes, 0 to 180°</span>
+        </h3>
+        <Sparkline values={lid} max={180} w={600} h={70} label="Lid angle over the last 2 minutes" />
+        <p className="fine">Trackpad finger positions are drawn live on the overview and never stored. No keystrokes are read.</p>
+      </div>
     </div>
   )
 }

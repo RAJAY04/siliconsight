@@ -47,6 +47,8 @@ export const AIR = {
     [0.68, 0, 0.9, 0.06],
   ],
   antennas: [0.35, 0, 0.65, 0.03],
+  // Three-mic array beside the left speaker at the hinge (estimated; the teardown table does not place it).
+  mics: [0.305, 0.012, 0.345, 0.04],
   // Horseshoe around the trackpad: thick outer cells to the front edge, thin cells between board and trackpad.
   cells: [
     [0.03, 0.36, 0.28, 0.96],
@@ -59,6 +61,19 @@ export const AIR = {
   panel: [0.025, 0.03, 0.975, 0.95],
   notch: [0.448, 0.03, 0.552, 0.06],
 } satisfies Record<string, Frac | Frac[]>
+
+/** Below this hinge angle the lid reads as nearly closed. */
+export const LID_NEARLY_CLOSED = 20
+/**
+ * Drawn tilt of the display layer, in degrees, for a real hinge angle. The drawn display is the lid opened flat
+ * (180 degrees, notch at the back), so it folds up toward the viewer as the real lid closes. The fold is a fifth
+ * of the real one so the stack stays readable: 110 degrees draws 14, and it stops at 32 when nearly closed.
+ * A shut lid (clamshell mode) lies flat again, so the board stays in view.
+ */
+export const lidTilt = (deg: number) => (deg < 1 ? 0 : (180 - Math.min(180, Math.max(LID_NEARLY_CLOSED, deg))) / 5)
+/** A shut lid while the page is being looked at means clamshell mode on an external display. */
+export const lidLabel = (deg: number) =>
+  deg < 1 ? 'Lid closed, using an external display' : deg < LID_NEARLY_CLOSED ? `Lid nearly closed, ${Math.round(deg)}°` : `Lid ${Math.round(deg)}°`
 
 export type Lane = { pts: [number, number][]; kind: 'gpu' | 'cpu' | 'disk1' | 'disk2' | 'net'; len: number; segs: number[] }
 function lane(kind: Lane['kind'], pts: [number, number][]): Lane {
@@ -152,6 +167,20 @@ export function geometry(L: typeof AIR) {
     TRAY: tray,
     LANES,
     KEYS,
+    SPEAKERS: L.speakers.map(box),
+    TRACKPAD: box(L.trackpad),
   }
 }
 export type Geometry = ReturnType<typeof geometry>
+
+/** r shrunk by d on every side. */
+export const inset = (r: Rect, d: number): Rect => ({ x: r.x + d, y: r.y + d, w: Math.max(0, r.w - 2 * d), h: Math.max(0, r.h - 2 * d) })
+
+/** A zigzag of n legs up and down r: strain-gauge foil, a coil seen from the side, a meander antenna. */
+export function serpentine(r: Rect, n: number): string {
+  const legs = Math.max(2, n)
+  const dx = r.w / (legs - 1)
+  let d = `M ${r.x} ${r.y + r.h}`
+  for (let i = 0; i < legs; i++) d += ` V ${i % 2 ? r.y + r.h : r.y}${i < legs - 1 ? ` H ${r.x + (i + 1) * dx}` : ''}`
+  return d
+}

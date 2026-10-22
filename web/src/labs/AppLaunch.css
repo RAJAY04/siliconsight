@@ -1,0 +1,384 @@
+/* App launch lab */
+.al-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.al-wrap {
+  position: relative;
+  min-width: 680px;
+}
+.al-wrap > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.al-hit-btn {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  border-radius: 24%;
+  background: transparent;
+  cursor: pointer;
+}
+.al-hit-btn:hover {
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.al-hit-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.al-scene text {
+  font-family: var(--sans);
+  font-size: 12px;
+  fill: var(--text);
+}
+.al-scene .al-small {
+  font-size: 12px;
+}
+.al-scene .al-mono {
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+.al-scene .al-muted {
+  fill: var(--muted);
+}
+.al-scene .al-accent {
+  fill: var(--accent);
+}
+.al-scene .al-ok {
+  fill: var(--ok);
+}
+.al-scene .al-bold {
+  font-weight: 650;
+}
+.al-wall-a {
+  stop-color: color-mix(in srgb, var(--accent-alt) 30%, var(--panel-solid));
+}
+.al-wall-b {
+  stop-color: color-mix(in srgb, var(--accent) 18%, var(--bg-2));
+}
+.al-screen {
+  fill: url(#al-wall);
+  stroke: var(--line-strong);
+}
+.al-menubar {
+  fill: color-mix(in srgb, var(--panel-solid) 75%, transparent);
+}
+.al-menu-dot {
+  fill: var(--muted);
+}
+.al-scene .al-menu {
+  font-size: 11.5px;
+}
+.al-dock {
+  fill: color-mix(in srgb, var(--panel-solid) 70%, transparent);
+  stroke: var(--line-strong);
+}
+.al-icon > rect {
+  stroke: color-mix(in srgb, var(--text) 18%, transparent);
+}
+.al-browser > rect {
+  fill: color-mix(in srgb, var(--accent) 70%, var(--panel-solid));
+}
+.al-notes > rect {
+  fill: color-mix(in srgb, var(--warn) 70%, var(--panel-solid));
+}
+.al-photos > rect {
+  fill: var(--panel-solid);
+}
+.al-music > rect {
+  fill: color-mix(in srgb, var(--crit) 65%, var(--panel-solid));
+}
+.al-terminal > rect {
+  fill: var(--bg-2);
+}
+.al-glyph {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.al-notes .al-glyph {
+  stroke: var(--panel-solid);
+}
+.al-glyph .al-fill,
+.al-glyph.al-fill circle {
+  fill: var(--text);
+  stroke: none;
+}
+.al-photos .al-glyph.al-fill circle:nth-child(1) {
+  fill: var(--warn);
+}
+.al-photos .al-glyph.al-fill circle:nth-child(2) {
+  fill: var(--ok);
+}
+.al-photos .al-glyph.al-fill circle:nth-child(3) {
+  fill: var(--accent);
+}
+.al-photos .al-glyph.al-fill circle:nth-child(4) {
+  fill: var(--crit);
+}
+.al-terminal .al-glyph {
+  stroke: var(--ok);
+}
+.al-run {
+  fill: var(--text);
+}
+.al-win-frame {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
+}
+.al-win-bar {
+  fill: var(--bg-2);
+}
+.al-win-btn {
+  fill: none;
+  stroke: var(--muted);
+}
+.al-wb rect {
+  fill: color-mix(in srgb, var(--accent) 40%, var(--panel-solid));
+}
+.al-wb rect.al-wb-soft {
+  fill: var(--bg-2);
+}
+.al-wb-term rect {
+  fill: var(--bg-2);
+}
+.al-scene .al-wb-term text {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  fill: var(--ok);
+}
+.al-hint-bg {
+  fill: color-mix(in srgb, var(--panel-solid) 85%, transparent);
+  stroke: var(--accent);
+}
+.al-scene .al-hint {
+  font-size: 14px;
+  font-weight: 600;
+}
+.al-seam {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 10 6;
+}
+.al-spine {
+  stroke: var(--line-strong);
+  stroke-width: 2;
+}
+.al-lane rect {
+  fill: var(--panel-solid);
+  stroke: var(--line);
+  transition: fill 0.25s, stroke 0.25s;
+}
+.al-lane.done rect {
+  stroke: color-mix(in srgb, var(--ok) 35%, transparent);
+}
+.al-lane.lit rect {
+  fill: color-mix(in srgb, var(--accent) 14%, var(--panel-solid));
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.al-scene .al-lane-name {
+  font-weight: 650;
+  font-size: 13px;
+  fill: var(--muted);
+}
+.al-lane.lit .al-lane-name,
+.al-lane.done .al-lane-name {
+  fill: var(--text);
+}
+.al-node {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+  stroke-width: 2;
+}
+.al-lane.done .al-node {
+  fill: var(--ok);
+  stroke: var(--ok);
+}
+.al-lane.lit .al-node {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+.al-scene .al-lane-text {
+  fill: var(--muted);
+}
+.al-lane.lit .al-lane-text {
+  fill: var(--text);
+}
+.al-token {
+  fill: var(--accent);
+  stroke: var(--panel-solid);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 6px var(--accent));
+}
+.al-panel {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+}
+.al-scene .al-p-head {
+  font-weight: 650;
+  font-size: 14px;
+}
+.al-p-box {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.al-p-box.al-new {
+  stroke: var(--accent);
+  stroke-width: 2;
+  fill: color-mix(in srgb, var(--accent) 14%, var(--bg-2));
+}
+.al-p-box.al-dim {
+  opacity: 0.5;
+}
+.al-tree {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+.al-tree.new {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.al-seg {
+  fill: color-mix(in srgb, var(--accent) 14%, var(--bg-2));
+  stroke: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.al-seg.zero {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-dasharray: 3 3;
+}
+.al-file {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.al-map {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.al-map.dashed {
+  stroke-dasharray: 4 3;
+}
+.al-pg {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.al-pg.ok {
+  fill: color-mix(in srgb, var(--ok) 30%, var(--bg-2));
+  stroke: var(--ok);
+}
+.al-chk {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+.al-chk.ok {
+  fill: color-mix(in srgb, var(--ok) 25%, transparent);
+  stroke: var(--ok);
+}
+.al-tick {
+  fill: none;
+  stroke: var(--ok);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.al-lib {
+  fill: var(--bg-2);
+  stroke: var(--warn);
+}
+.al-lib.cache {
+  fill: color-mix(in srgb, var(--accent-alt) 18%, var(--bg-2));
+  stroke: color-mix(in srgb, var(--accent-alt) 55%, transparent);
+}
+.al-call {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.al-call.last {
+  stroke: var(--accent);
+  fill: color-mix(in srgb, var(--accent) 12%, var(--bg-2));
+}
+.al-fr {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-dasharray: 4 3;
+}
+.al-fr.in {
+  fill: color-mix(in srgb, var(--accent) 30%, var(--bg-2));
+  stroke: var(--accent);
+  stroke-dasharray: none;
+}
+.al-ssd {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.al-pkt {
+  fill: var(--accent);
+}
+.al-flash {
+  fill: none;
+  stroke: var(--ok);
+  stroke-width: 2.5;
+}
+.al-layer {
+  stroke: var(--line-strong);
+}
+.al-layer.l0 {
+  fill: color-mix(in srgb, var(--accent-alt) 25%, var(--bg-2));
+}
+.al-layer.l1 {
+  fill: color-mix(in srgb, var(--panel-solid) 80%, transparent);
+}
+.al-layer.l2 {
+  fill: color-mix(in srgb, var(--accent) 25%, var(--panel-solid));
+  stroke: var(--accent);
+}
+.al-display {
+  fill: var(--bg-2);
+  stroke: var(--text);
+  stroke-width: 2;
+}
+.al-watch {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px 16px;
+  margin: 12px 0 0;
+}
+.al-watch div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.al-watch dt {
+  font-size: 11.5px;
+  color: var(--faint);
+}
+.al-watch dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.al-past {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.al-past h4 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.lab-body:has(.al-scene) .lab-deeper code {
+  overflow-wrap: anywhere;
+}
+.lab-body:has(.al-scene) .lab-live-stat { min-width: 0; }
+.lab-body:has(.al-scene) .lab-live-value { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -1,0 +1,44 @@
+/* Shared by the four Play games in this folder: the card and the lesson that follows a round. */
+.mole-game,
+.watts-game,
+.heat-game,
+.wifi-game {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  overflow: hidden;
+  background: radial-gradient(600px 300px at 30% 0%, var(--accent-soft), transparent 70%), var(--panel);
+}
+.game-lesson {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+}
+.game-lesson h4 {
+  margin: 0;
+  font-size: 15px;
+}
+.game-lesson p {
+  margin: 0;
+  max-width: 72ch;
+}
+.game-toggle {
+  display: flex;
+  gap: 8px;
+}
+.game-toggle button {
+  padding: 6px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+}
+.game-toggle button[aria-pressed='true'] {
+  border-color: var(--warn);
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+}

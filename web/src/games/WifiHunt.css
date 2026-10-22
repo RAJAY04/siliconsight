@@ -1,0 +1,309 @@
+/* Wi-Fi Hot and Cold (games/WifiHunt.tsx). */
+.wifi-game .tone-ok {
+  color: var(--ok);
+  fill: var(--ok);
+}
+.wifi-game .tone-accent {
+  color: var(--accent);
+  fill: var(--accent);
+}
+.wifi-game .tone-warn {
+  color: var(--warn);
+  fill: var(--warn);
+}
+.wifi-game .tone-crit {
+  color: var(--crit);
+  fill: var(--crit);
+}
+.wifi-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+}
+@media (max-width: 680px) {
+  .wifi-top {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+}
+.wifi-gauge {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  overflow: visible;
+}
+.wifi-seg {
+  fill: none;
+  stroke-width: 18;
+  stroke: color-mix(in srgb, var(--crit) calc(var(--k) * 100%), var(--accent));
+  opacity: 0.85;
+}
+.wifi-tick,
+.wifi-end {
+  fill: var(--faint);
+  font: 11px var(--mono);
+  text-anchor: middle;
+}
+.wifi-end {
+  font: 600 12px var(--sans);
+  fill: var(--muted);
+}
+.wifi-best {
+  stroke: var(--text);
+  stroke-width: 3;
+}
+.wifi-needle {
+  transition: transform 0.7s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.wifi-needle line {
+  stroke: var(--text);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.wifi-hub {
+  fill: var(--text);
+}
+.wifi-now {
+  display: grid;
+  justify-items: center;
+  min-width: 140px;
+}
+.wifi-dbm {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.wifi-unit {
+  font-size: 13px;
+  color: var(--muted);
+}
+.wifi-q {
+  margin-top: 4px;
+  font-weight: 650;
+  text-transform: capitalize;
+}
+.wifi-trend {
+  min-height: 1.4em;
+  font-weight: 700;
+  color: var(--muted);
+}
+.trend-warmer .wifi-trend {
+  color: var(--crit);
+  animation: wifi-pulse 0.6s ease-out;
+}
+.trend-colder .wifi-trend {
+  color: var(--accent);
+}
+@keyframes wifi-pulse {
+  from {
+    transform: scale(1.3);
+  }
+}
+.wifi-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 14px;
+  margin: 0;
+}
+.wifi-facts dt {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.wifi-facts dd {
+  margin: 0;
+  font-size: 14px;
+}
+.wifi-timeline {
+  width: 100%;
+  height: auto;
+}
+.wifi-zone {
+  opacity: 0.08;
+}
+.wifi-axis {
+  fill: var(--faint);
+  font: 12px var(--mono);
+  text-anchor: end;
+}
+.wifi-axis-x {
+  text-anchor: middle;
+}
+.wifi-start {
+  stroke: var(--muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+}
+.wifi-trail {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 2;
+}
+.wifi-flag line {
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+.wifi-flag text {
+  fill: var(--text);
+  font: 600 12px var(--sans);
+}
+.wifi-mark {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.wifi-mark input {
+  min-width: 0;
+  width: min(260px, 100%);
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-solid);
+  color: var(--text);
+  font: inherit;
+}
+.wifi-marks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+.wifi-marks li {
+  display: flex;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--line-strong);
+}
+.wifi-record {
+  margin: 0;
+  text-align: center;
+}
+
+/* The simulated flat. */
+.wifi-flat {
+  display: grid;
+  gap: 8px;
+}
+.wifi-flat .fine {
+  margin: 0;
+}
+.wifi-flat-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.wifi-plan {
+  width: min(760px, 100%);
+  justify-self: center;
+  height: auto;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+.wifi-floor {
+  fill: var(--panel-solid);
+}
+.wifi-outer {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 6;
+}
+.wifi-ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  opacity: 0.25;
+  stroke-dasharray: 4 6;
+}
+.wifi-room {
+  fill: var(--faint);
+  font: 600 22px var(--sans);
+  text-anchor: middle;
+}
+.wifi-wall {
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+.wifi-wall.m-glass {
+  stroke: var(--accent-alt);
+  stroke-width: 6;
+  opacity: 0.7;
+}
+.wifi-wall.m-wood {
+  stroke: color-mix(in srgb, var(--warn) 55%, var(--panel-solid));
+  stroke-width: 7;
+}
+.wifi-wall.m-brick {
+  stroke: color-mix(in srgb, var(--crit) 55%, var(--panel-solid));
+}
+.wifi-wall.m-concrete {
+  stroke: var(--muted);
+  stroke-width: 14;
+}
+.wifi-wall.m-metal {
+  stroke: var(--text);
+  stroke-width: 16;
+}
+.wifi-wall.hit {
+  filter: drop-shadow(0 0 6px var(--crit));
+}
+.wifi-ray {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-dasharray: 8 6;
+}
+.wifi-router rect {
+  fill: var(--accent);
+}
+.wifi-router line {
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.wifi-router text,
+.wifi-oven text {
+  fill: var(--muted);
+  font: 600 16px var(--sans);
+  text-anchor: middle;
+}
+.wifi-oven rect {
+  fill: var(--alu-edge);
+}
+.wifi-oven .wifi-oven-door {
+  fill: var(--bg-2);
+}
+.wifi-oven.on .wifi-oven-door {
+  fill: var(--warn);
+  animation: wifi-glow 1s ease-in-out infinite alternate;
+}
+@keyframes wifi-glow {
+  to {
+    opacity: 0.5;
+  }
+}
+.wifi-laptop {
+  cursor: grab;
+  outline: none;
+}
+.wifi-laptop-halo {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.wifi-laptop:focus-visible .wifi-laptop-halo {
+  stroke-width: 5;
+}
+.wifi-laptop-lid {
+  fill: var(--text);
+}
+.wifi-laptop-base {
+  fill: var(--muted);
+}

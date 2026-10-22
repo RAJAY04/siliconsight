@@ -1,0 +1,258 @@
+/* Core X-ray */
+.cx-cluster + .cx-cluster {
+  margin-top: 14px;
+}
+.cx-cluster h4 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.cx-cluster-sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--faint);
+}
+.cx-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.cx-tile {
+  --c: var(--accent);
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-2);
+  transition: border-color 0.3s;
+}
+.cx-tile.k-E {
+  --c: var(--ok);
+}
+.cx-tile.hot {
+  border-color: var(--c);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--c) 30%, transparent);
+}
+.cx-tile-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.cx-tile-id {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.cx-tile-load {
+  font: 600 22px var(--mono);
+  color: var(--c);
+}
+.cx-tile-clock {
+  font-size: 12.5px;
+  color: var(--text);
+}
+.cx-res {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--panel-solid);
+  border: 1px solid var(--line);
+}
+.cx-res span {
+  display: block;
+  height: 100%;
+  background: var(--c);
+}
+.cx-tile .spark {
+  width: 100%;
+}
+.cx-tile-irq {
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.cx-table-wrap {
+  overflow-x: auto;
+}
+.cx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.cx-table th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--faint);
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--line-strong);
+}
+.cx-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.cx-table .r {
+  text-align: right;
+}
+.cx-proc,
+.cx-tname {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cx-tname {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.cx-dimtext {
+  color: var(--faint);
+}
+.cx-qos {
+  --q: var(--muted);
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 9px;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--q) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--q) 45%, transparent);
+}
+.q-ui {
+  --q: var(--accent);
+}
+.q-initiated {
+  --q: var(--accent-alt);
+}
+.q-default {
+  --q: var(--ok);
+}
+.q-utility {
+  --q: var(--warn);
+}
+.q-background {
+  --q: var(--muted);
+}
+.q-above {
+  --q: var(--crit);
+}
+.cx-cmd {
+  margin: 6px 0 0;
+  padding: 8px 12px;
+  border-radius: 9px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  overflow-x: auto;
+  font-size: 13px;
+}
+
+/* Scene */
+.cx-scene text {
+  font-family: var(--sans);
+  font-size: 13px;
+  fill: var(--text);
+}
+.cx-head {
+  font-weight: 650;
+  font-size: 14px !important;
+}
+.cx-dim,
+.cx-scene .cx-dim {
+  fill: var(--muted);
+  font-weight: 400;
+  font-size: 12px;
+}
+.cx-pill rect {
+  fill: color-mix(in srgb, var(--accent) 16%, var(--panel-solid));
+  stroke: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.cx-save rect {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+  stroke-dasharray: 4 3;
+}
+.cx-wave {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 2;
+}
+.cx-wave.on {
+  stroke: var(--accent);
+}
+.cx-core > rect {
+  fill: color-mix(in srgb, var(--accent) 14%, var(--panel-solid));
+  stroke: var(--accent);
+  stroke-width: 2;
+  transition: fill 0.4s, stroke 0.4s;
+}
+.cx-core.p-clock > rect {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+}
+.cx-core.p-off > rect {
+  fill: var(--bg);
+  stroke: var(--line-strong);
+  stroke-dasharray: 6 4;
+}
+.cx-core.p-off text {
+  fill: var(--muted);
+}
+.cx-state {
+  font-weight: 600;
+  font-size: 12px !important;
+  fill: var(--accent) !important;
+}
+.cx-core.p-clock .cx-state,
+.cx-core.p-off .cx-state {
+  fill: var(--muted) !important;
+}
+.cx-reg rect {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.cx-reg.on rect {
+  stroke: var(--accent);
+}
+.cx-reg text {
+  font-family: var(--mono) !important;
+  font-size: 12px !important;
+}
+.cx-step {
+  fill: var(--line-strong);
+  transition: fill 0.2s;
+}
+.cx-step.below {
+  fill: color-mix(in srgb, var(--accent) 40%, var(--line-strong));
+}
+.cx-step.on {
+  fill: var(--accent);
+}
+.cx-kernel rect {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+}
+.cx-kernel-k {
+  font-weight: 700;
+}
+.cx-token rect {
+  fill: var(--accent);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+.cx-token.irq rect {
+  fill: var(--warn);
+}
+.cx-token.b rect {
+  fill: var(--accent-alt);
+}
+.cx-token text {
+  font-family: var(--mono) !important;
+  font-weight: 700;
+  font-size: 12px !important;
+  fill: var(--on-accent) !important;
+}

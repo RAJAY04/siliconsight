@@ -7,11 +7,14 @@ import { useEffect, useRef } from 'react'
  *
  * - 18 fps while something is travelling (the draw callback returns true), 9 fps when only flicker is
  *   left; the backing store is capped at 1.5x device pixels.
+ * - 'fast' asks for 36 fps (live trackpad fingers; every second frame lands on the 18 fps grid), and 'sleep'
+ *   takes the loop off the clock until the returned wake() is called.
  * - Stops while `paused` (a panel covers it) and while the tab is hidden.
  * - Reduced motion: no loop; one still frame each time `stamp` changes (once per sample).
  */
 const FPS = 18
 const IDLE_FPS = 9
+const FAST_FPS = FPS * 2
 const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /**
@@ -48,22 +51,33 @@ if (typeof document !== 'undefined') document.addEventListener('visibilitychange
 export function useCanvasLoop(
   canvas: React.RefObject<HTMLCanvasElement | null>,
   logicalW: number,
-  draw: (ctx: CanvasRenderingContext2D, t: number, dt: number, still: boolean) => boolean | void,
+  draw: (ctx: CanvasRenderingContext2D, t: number, dt: number, still: boolean) => boolean | void | 'fast' | 'sleep',
   paused: boolean,
   stamp: number,
-) {
+): () => void {
   const drawRef = useRef(draw)
   drawRef.current = draw
+  const wake = useRef(() => {})
+  const wakeFn = useRef(() => wake.current()).current
   const still = reduced()
   useEffect(() => {
     const c = canvas.current
     if (!c || paused) return
     const ctx = c.getContext('2d')!
-    // Size the backing store to what is shown, so a small inset does not paint a large canvas.
+    // Size the backing store to what is shown, so a small inset does not paint a large canvas. A canvas inside the
+    // zoomed 3D scene shows larger than its layout size; without the magnification it would be stretched and blurry.
+    let mag = 1
+    const magnification = () => {
+      const w = c.clientWidth
+      return w ? Math.min(4, Math.max(1, c.getBoundingClientRect().width / w)) : 1
+    }
     const fit = () => {
-      const k = (Math.min(1.5, devicePixelRatio || 1) * c.clientWidth) / logicalW
-      c.width = Math.max(1, Math.round(c.clientWidth * Math.min(1.5, devicePixelRatio || 1)))
-      c.height = Math.max(1, Math.round(c.clientHeight * Math.min(1.5, devicePixelRatio || 1)))
+      mag = magnification()
+      // ponytail: fixed 6 MP budget per canvas; raise it if close-ups still look soft on big displays.
+      const s = Math.min(Math.min(1.5, devicePixelRatio || 1) * mag, Math.sqrt(6e6 / Math.max(1, c.clientWidth * c.clientHeight)))
+      const k = (s * c.clientWidth) / logicalW
+      c.width = Math.max(1, Math.round(c.clientWidth * s))
+      c.height = Math.max(1, Math.round(c.clientHeight * s))
       ctx.setTransform(k, 0, 0, k, 0, 0)
     }
     fit()
@@ -100,18 +114,34 @@ export function useCanvasLoop(
       tick: (now) => {
         const dt = last ? Math.min(0.1, (now - last) / 1000) : 1 / FPS
         last = now
-        return 1000 / (drawRef.current(ctx, now / 1000, dt, false) ? FPS : IDLE_FPS)
+        // The camera moves without resizing anything, so check the zoom about twice a second.
+        if (Math.floor(now / 500) !== Math.floor((now - dt * 1000) / 500)) {
+          const m = magnification()
+          if (m / mag > 1.25 || mag / m > 1.25) fit()
+        }
+        const r = drawRef.current(ctx, now / 1000, dt, false)
+        if (r === 'sleep') loops.delete(loop)
+        return 1000 / (r === 'fast' ? FAST_FPS : r ? FPS : IDLE_FPS)
       },
+    }
+    wake.current = () => {
+      if (loops.has(loop)) return
+      loop.due = 0
+      last = 0
+      loops.add(loop)
+      schedule()
     }
     loops.add(loop)
     schedule()
     return () => {
+      wake.current = () => {}
       loops.delete(loop)
       schedule()
       stop()
     }
     // Under reduced motion `stamp` re-runs this once per sample to draw the new still frame.
   }, [canvas, logicalW, paused, still ? stamp : 0, still])
+  return wakeFn
 }
 
 export type Tile = { x: number; y: number; w: number; h: number; r: number; u: number | null; color: string }

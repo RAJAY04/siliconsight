@@ -5,3 +5,4 @@ reader/.build
 reader/.swiftpm
 *.log
 .claude/
+.vscode/

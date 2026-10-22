@@ -8,13 +8,19 @@ final class Sampler {
     private let smc = SMC()
     private let procs = Processes()
     private let diskNet = DiskNet()
+    private let mem = MemoryReader()
+    private let sched: SchedReader
     let llm: LLMPoller
+    let sensors = Sensors()
     private var tick = 0
+    private var wifi: Any = NSNull()
     private var slow: (topCpu: [[String: Any]], topMem: [[String: Any]], battery: Any, batteryTemp: Double?, cpuTemp: Double?, gpuTemp: Double?) = ([], [], NSNull(), nil, nil, nil)
 
     init(queue: DispatchQueue) {
         cpu = CPUUsage(hw: hw)
+        sched = SchedReader(kinds: cpu.kinds)
         llm = LLMPoller(queue: queue)
+        _ = mem.read(totalBytes: hw.memBytes)
     }
 
     func hello() -> [String: Any] {
@@ -38,17 +44,19 @@ final class Sampler {
 
     func sample() -> [String: Any] {
         let soc = ioreport.read()
-        // SMC temperature reads (about 40 slow kernel calls) and the process scan cost the most
-        // after IOReport. Refreshing them every 2 s keeps the reader near 1% CPU; process CPU% is
+        // SMC temperature reads (about 40 slow kernel calls), the process scan and CoreWLAN's RSSI call cost
+        // the most after IOReport. Refreshing them every 2 s keeps the reader near 1% CPU; process CPU% is
         // still exact because it is a delta over the 2 s window.
         if tick % 2 == 0 {
             let (topCpu, topMem) = procs.read()
             let (battery, batteryTemp) = readBattery()
             slow = (topCpu, topMem, battery, batteryTemp, smc.average(smc.cpuKeys), smc.average(smc.gpuKeys))
+            wifi = WiFi.read()
         }
         tick += 1
         let (disk, net) = diskNet.read()
-        var memory = readMemory(totalBytes: hw.memBytes)
+        let (mem0, paging) = mem.read(totalBytes: hw.memBytes)
+        var memory = mem0
         memory["bandwidthGBs"] = round2(soc.bandwidthGBs)
 
         // PSTR is the SMC's whole-system power reading in watts.
@@ -76,6 +84,7 @@ final class Sampler {
                 "dramW": round2(soc.dramW), "systemW": round2(systemW),
             ],
             "memory": memory,
+            "paging": paging,
             "topCpu": slow.topCpu,
             "topMem": slow.topMem,
             "disk": disk,
@@ -89,6 +98,10 @@ final class Sampler {
             "fans": smc.fans(),
             "battery": slow.battery,
             "llm": llm.current,
+            "sensors": sensors.read(),
+            "wifi": wifi,
+            "sched": sched.read(soc, eFreqs: ioreport.eFreqs, pFreqs: ioreport.pFreqs),
+            "media": Dictionary(uniqueKeysWithValues: IOReport.mediaAgents.values.map { ($0, round2(soc.media[$0])) }),
         ]
     }
 }

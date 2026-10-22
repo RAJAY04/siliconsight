@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { NA } from './format.ts'
+import { InfoButton } from './Learn.tsx'
 
 /** A formatted value. "n/a" gets a tooltip explaining why, so null never reads as zero. */
 export function Val({ v, why }: { v: string; why?: string }) {
@@ -11,10 +12,13 @@ export function Val({ v, why }: { v: string; why?: string }) {
   )
 }
 
-export function Stat({ label, value, why, sub }: { label: string; value: string; why?: string; sub?: ReactNode }) {
+export function Stat({ label, value, why, sub, topic }: { label: string; value: string; why?: string; sub?: ReactNode; topic?: string }) {
   return (
     <div className="stat">
-      <div className="stat-label">{label}</div>
+      <div className="stat-label">
+        {label}
+        {topic && <InfoButton topic={topic} />}
+      </div>
       <div className="stat-value">
         <Val v={value} why={why} />
       </div>

@@ -38,6 +38,10 @@ struct SocReading {
     var gpuFreqMHz: Double?
     var cpuW: Double?, gpuW: Double?, aneW: Double?, dramW: Double?
     var bandwidthGBs: Double?
+    /// DRAM traffic of the video decoder (AVD), encoder (AVE), scaler (MSR) and camera ISP, GB/s.
+    var media: [String: Double] = [:]
+    /// Per-core residencies by IOReport channel name ("ECPU0", "PCPU3"), in state order.
+    var coreStates: [String: [(String, Int64)]] = [:]
 }
 
 // One IOReport subscription; `delta()` returns the channels changed since the previous call.
@@ -83,11 +87,15 @@ final class IOReport {
     private let main: Subscription
     // The PMP bandwidth histogram costs about as much as everything else together (the data comes
     // from a coprocessor), so it is read every 2 s; the histogram delta is an exact 2 s average.
-    private let pmp = Subscription([("PMP", "DCS BW", ["AMCC RD+WR"])])
+    // The same histograms exist per block; the media ones ride along at no measurable extra cost.
+    private let pmp = Subscription([("PMP", "DCS BW", Set(["AMCC RD+WR"] + IOReport.mediaAgents.keys))])
+    static let mediaAgents = ["AVD RD+WR": "decodeGBs", "AVE RD+WR": "encodeGBs", "MSR RD+WR": "scalerGBs", "ISP RD+WR": "ispGBs"]
     private var tick = 0
     private var bandwidth: Double?
+    private var media: [String: Double] = [:]
     private var modelGpuSeen = false
-    private let eFreqs: [Double], pFreqs: [Double], gpuFreqs: [Double]
+    let eFreqs: [Double], pFreqs: [Double]
+    private let gpuFreqs: [Double]
 
     init() {
         let dvfs = IOReport.dvfsTables()
@@ -159,11 +167,15 @@ final class IOReport {
 
     func read() -> SocReading {
         var r = SocReading()
-        if tick % 2 == 0, let (items, _) = pmp.delta(), let item = items.first {
-            bandwidth = IOReport.histogramMean(IOReport.states(item))
+        if tick % 2 == 0, let (items, _) = pmp.delta() {
+            var bins: [String: [(String, Int64)]] = [:]
+            for item in items { bins[IOReport.str(getName, item)] = IOReport.states(item) }
+            bandwidth = bins["AMCC RD+WR"].flatMap(IOReport.histogramMean)
+            media = IOReport.mediaTraffic(bins)
         }
         tick += 1
         r.bandwidthGBs = bandwidth
+        r.media = media
         guard let (items, dt) = main.delta() else { return r }
 
         var eStates: [[(String, Int64)]] = [], pStates: [[(String, Int64)]] = []
@@ -174,8 +186,10 @@ final class IOReport {
             case "Energy Model": model[name] = IOReport.watts(item, dt)
             case "CLPC": clpc[name] = IOReport.watts(item, dt)
             case "CPU Stats":
-                if name.hasPrefix("ECPU") { eStates.append(IOReport.states(item)) }
-                if name.hasPrefix("PCPU") { pStates.append(IOReport.states(item)) }
+                let states = IOReport.states(item)
+                r.coreStates[name] = states
+                if name.hasPrefix("ECPU") { eStates.append(states) }
+                if name.hasPrefix("PCPU") { pStates.append(states) }
             case "GPU Stats":
                 let s = IOReport.states(item)
                 let total = s.reduce(0) { $0 + $1.1 }
@@ -207,13 +221,32 @@ final class IOReport {
 
     // PMP "DCS BW" is a histogram: bins named "4GB/s", "8GB/s", ... count how often DRAM traffic
     // fell in each 4 GB/s band. The mean of bin midpoints gives bandwidth to about 2 GB/s.
-    private static func histogramMean(_ bins: [(String, Int64)]) -> Double? {
+    static func histogramMean(_ bins: [(String, Int64)]) -> Double? {
+        guard let (sum, n) = histogramTotals(bins), n > 0 else { return nil }
+        return sum / Double(n)
+    }
+
+    private static func histogramTotals(_ bins: [(String, Int64)]) -> (sum: Double, n: Int64)? {
         var sum = 0.0, n: Int64 = 0, lower = 0.0
         for (label, count) in bins {
             guard let upper = Double(label.trimmingCharacters(in: .whitespaces).prefix { $0.isNumber || $0 == "." }) else { return nil }
             sum += Double(count) * (lower + upper) / 2; n += count; lower = upper
         }
-        return n > 0 ? sum / Double(n) : nil
+        return (sum, n)
+    }
+
+    // A block's histogram (1 GB/s bins) only counts the sampling windows in which it moved data, while
+    // DRAM as a whole moves data in every window. So the block's average over the whole interval is its
+    // bin-midpoint sum divided by the DRAM window count. Checked on an M5: AVD reads ~0.002 idle and
+    // ~2.5 during a hardware HEVC decode, AVE rises during a hardware encode, ISP only while the camera runs.
+    // ponytail: assumes every DCS BW histogram shares one window clock; idle traffic under 1 GB/s still counts as 0.5.
+    static func mediaTraffic(_ bins: [String: [(String, Int64)]]) -> [String: Double] {
+        guard let (_, windows) = bins["AMCC RD+WR"].flatMap(histogramTotals), windows > 0 else { return [:] }
+        var out: [String: Double] = [:]
+        for (channel, key) in mediaAgents {
+            if let (sum, _) = bins[channel].flatMap(histogramTotals) { out[key] = sum / Double(windows) }
+        }
+        return out
     }
 
     // Per-core residencies summed across the cluster, then weighted against the DVFS table.
@@ -229,7 +262,7 @@ final class IOReport {
     }
 
     // State lists look like [IDLE, f0, f1, ...] or [OFF, f0, ...]; the first non-idle state is freqs[0].
-    private static func avgFreq(_ states: [(String, Int64)], _ freqs: [Double]) -> (Double, Int64) {
+    static func avgFreq(_ states: [(String, Int64)], _ freqs: [Double]) -> (Double, Int64) {
         guard let offset = states.firstIndex(where: { !["IDLE", "OFF", "DOWN"].contains($0.0) }) else { return (0, 0) }
         var weighted = 0.0, active: Int64 = 0
         for (i, f) in freqs.enumerated() where offset + i < states.count {

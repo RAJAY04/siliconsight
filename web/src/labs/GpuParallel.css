@@ -1,0 +1,188 @@
+/* How a GPU thinks */
+.gp-scene text {
+  font-family: var(--sans);
+  font-size: 12px;
+  fill: var(--text);
+}
+.gp-scene .gp-head {
+  font-weight: 650;
+  font-size: 14px;
+}
+.gp-scene .gp-note {
+  font-size: 11.5px;
+  fill: var(--muted);
+}
+.gp-scene .gp-fine {
+  font-size: 12.5px;
+  fill: var(--muted);
+}
+.gp-scene .gp-tiny {
+  font-size: 11px;
+  fill: var(--muted);
+}
+.gp-scene .gp-mono {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.gp-scene .gp-big {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 18px;
+  fill: var(--accent);
+}
+.gp-cpu > rect:first-child,
+.gp-core > rect:first-child,
+.gp-code,
+.gp-screen {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+}
+.gp-ctl {
+  fill: color-mix(in srgb, var(--accent-alt) 18%, var(--panel-solid));
+  stroke: color-mix(in srgb, var(--accent-alt) 45%, transparent);
+}
+.gp-alu {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.gp-alu.on,
+.gp-lane.on {
+  fill: var(--accent);
+  stroke: none;
+}
+.gp-lane {
+  fill: var(--bg-2);
+  transition: fill 0.25s;
+}
+.gp-line rect {
+  fill: transparent;
+}
+.gp-line.on rect {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+}
+.gp-lanebox rect {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+  transition: fill 0.25s, opacity 0.25s;
+}
+.gp-lanebox.act rect {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.gp-lanebox.masked {
+  opacity: 0.35;
+}
+.gp-lanebox.masked rect {
+  stroke-dasharray: 4 3;
+}
+.gp-scene .gp-lane-t {
+  font-family: var(--mono);
+  font-weight: 650;
+  font-size: 12px;
+}
+.gp-scene .gp-lanebox.painted .gp-lane-t {
+  fill: var(--on-accent);
+}
+.gp-pass rect {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+  stroke-dasharray: 4 3;
+}
+.gp-pass.on rect {
+  fill: color-mix(in srgb, var(--warn) 16%, var(--panel-solid));
+  stroke: var(--warn);
+  stroke-dasharray: none;
+}
+.gp-tri {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.gp-tri.ghost {
+  fill: color-mix(in srgb, var(--accent-alt) 20%, transparent);
+  stroke: var(--accent-alt);
+}
+.gp-tri.edge {
+  fill: none;
+}
+.gp-flow {
+  stroke: var(--muted);
+  stroke-width: 2;
+}
+.gp-arrowhead {
+  fill: var(--muted);
+}
+.gp-vtx circle {
+  fill: var(--accent);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+.gp-scene .gp-vtx text {
+  font-family: var(--mono);
+  font-weight: 700;
+  fill: var(--on-accent);
+}
+.gp-frag {
+  fill: color-mix(in srgb, var(--accent) 45%, var(--panel-solid));
+}
+.gp-tiles line {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.gp-m {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.gp-m.hot {
+  fill: color-mix(in srgb, var(--warn) 55%, var(--panel-solid));
+  stroke: var(--warn);
+}
+.gp-m.out {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+/* Paint race */
+.gp-range input {
+  width: 160px;
+  accent-color: var(--accent);
+}
+.gp-code-line {
+  margin: 12px 0 0;
+  overflow-x: auto;
+}
+.gp-code-line code {
+  white-space: pre;
+  font-size: 13px;
+}
+.gp-race {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+.gp-race figure {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+.gp-race canvas {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-2);
+  image-rendering: pixelated;
+}
+.gp-race canvas.gp-grid {
+  background-image: linear-gradient(90deg, var(--line-strong) 1px, transparent 1px), linear-gradient(var(--line-strong) 1px, transparent 1px);
+  background-size: 12.5% 8.333%;
+}
+.gp-race figcaption {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.gp-race figcaption b {
+  color: var(--text);
+}

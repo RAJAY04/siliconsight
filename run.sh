@@ -24,7 +24,7 @@ while (($#)); do
 done
 
 if [[ ! -f web/dist/index.html ]] ||
-   [[ -n "$(find web/src web/index.html web/package.json web/vite.config.ts -newer web/dist/index.html -print -quit 2>/dev/null)" ]]; then
+   [[ -n "$(find web/src docs/learn web/index.html web/package.json web/vite.config.ts -newer web/dist/index.html -print -quit 2>/dev/null)" ]]; then
   echo "building web app..."
   [[ -d web/node_modules ]] || npm --prefix web ci
   npm --prefix web run build

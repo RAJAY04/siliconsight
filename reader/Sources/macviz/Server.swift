@@ -49,6 +49,13 @@ final class Server {
         for c in clients.values { sendFrame(frame, to: c) }
     }
 
+    /// For `fast` messages: a client still holding 3 unsent frames skips this one instead of
+    /// queueing it, so 30 fast messages a second never get a slow reader dropped.
+    func broadcastLossy(_ text: Data) {
+        let frame = Server.frame(text)
+        for (id, c) in clients where (inFlight[id] ?? 0) < 3 { sendFrame(frame, to: c) }
+    }
+
     func send(_ text: Data, to c: NWConnection) { sendFrame(Server.frame(text), to: c) }
 
     // A client that stops reading would grow its send queue forever; drop it after 30 unsent samples.

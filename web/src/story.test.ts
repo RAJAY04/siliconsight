@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { byApp, detectStory, chipLine, clusterAvg, recentAvg } from './story.ts'
+import { byApp, detectStory, chipLine, clusterAvg, recentAvg, sensorsOf } from './story.ts'
 import { bytes, memGB, rate, watts, pct, minutes, mhz, NA } from './format.ts'
-import { demoHello } from './demo.ts'
+import { demoFingers, demoHello, demoLid } from './demo.ts'
 import type { Sample } from './types.ts'
 
 function sample(p: number, e: number, over: Partial<Sample> = {}): Sample {
@@ -165,4 +165,39 @@ test('processes sharing a name are merged into one row, largest first', () => {
     { name: 'Google Chrome', n: 2, v: 51 },
     { name: 'fontd', n: 1, v: 32 },
   ])
+})
+
+const sensors = (over: Partial<Sample['sensors'] & object> = {}): Sample['sensors'] => ({
+  lidAngleDeg: 110, cameraInUse: false, micInUse: false, audioPlaying: false, displayBrightness: 0.5, keyboardBacklight: 0, ...over,
+})
+
+test('the story says when something is using the camera or the microphone, and only then', () => {
+  const at = (over: Partial<Sample['sensors'] & object>) => detectStory(run(sample(0.02, 0.1, { sensors: sensors(over) }))).inUse
+  assert.equal(at({}), undefined)
+  assert.equal(at({ cameraInUse: true }), 'Something is using the camera.')
+  assert.equal(at({ micInUse: true }), 'Something is using the microphone.')
+  assert.equal(at({ cameraInUse: true, micInUse: true }), 'Something is using the camera and the microphone.')
+  // An older reader without sensors, or unknown values, say nothing.
+  assert.equal(detectStory(run(sample(0.02, 0.1))).inUse, undefined)
+  assert.equal(at({ cameraInUse: null, micInUse: null }), undefined)
+  // The line rides along with whatever the main story is.
+  assert.equal(detectStory(run(sample(0.9, 0.4, { sensors: sensors({ cameraInUse: true }) }))).kind, 'compile')
+})
+
+test('sensorsOf reads a missing or malformed field as null, never as off or 0', () => {
+  assert.deepEqual(sensorsOf(sample(0, 0)), { lidAngleDeg: null, cameraInUse: null, micInUse: null, audioPlaying: null, displayBrightness: null, keyboardBacklight: null })
+  const bad = sensorsOf(sample(0, 0, { sensors: { lidAngleDeg: '90', cameraInUse: 1, micInUse: 'no', audioPlaying: true, displayBrightness: 1.4, keyboardBacklight: NaN } as never }))
+  assert.deepEqual(bad, { lidAngleDeg: null, cameraInUse: null, micInUse: null, audioPlaying: true, displayBrightness: 1, keyboardBacklight: null })
+})
+
+test('demo sensors stay plausible: the lid between 100 and 120, fingers on the pad and only now and then', () => {
+  let touching = 0
+  for (let el = 0; el < 240_000; el += 100) {
+    const lid = demoLid(el)
+    assert.ok(lid >= 100 && lid <= 120, String(lid))
+    const f = demoFingers(el)
+    if (f.length) touching++
+    for (const p of f) assert.ok([p.x, p.y, p.size].every((v) => v >= 0 && v <= 1))
+  }
+  assert.ok(touching > 0 && touching < 2400 * 0.2, String(touching))
 })

@@ -1,0 +1,231 @@
+/* SSD flash lab */
+.fl-scene text,
+.fl-sim text {
+  font-family: var(--sans);
+  font-size: 12px;
+  fill: var(--text);
+}
+.fl-scene .fl-head {
+  font-weight: 650;
+  font-size: 14px;
+}
+.fl-scene .fl-sub,
+.fl-sim .fl-sub {
+  font-size: 11.5px;
+  fill: var(--muted);
+}
+.fl-scene .fl-mono,
+.fl-sim .fl-mono {
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+.fl-scene .fl-kind {
+  font-weight: 650;
+  font-size: 13px;
+}
+.fl-axis {
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+.fl-bell {
+  fill: color-mix(in srgb, var(--accent) 22%, transparent);
+  stroke: var(--accent);
+  stroke-width: 1.2;
+}
+.fl-bell.on {
+  fill: color-mix(in srgb, var(--warn) 55%, transparent);
+  stroke: var(--warn);
+  stroke-width: 2;
+}
+.fl-ref {
+  stroke: var(--muted);
+  stroke-dasharray: 3 3;
+  opacity: 0.6;
+}
+.fl-gate {
+  fill: color-mix(in srgb, var(--accent-alt) 22%, var(--panel-solid));
+  stroke: var(--accent-alt);
+}
+.fl-trap {
+  fill: var(--bg-2);
+  stroke: var(--warn);
+  stroke-dasharray: 5 3;
+}
+.fl-chan {
+  fill: color-mix(in srgb, var(--ok) 14%, var(--panel-solid));
+  stroke: color-mix(in srgb, var(--ok) 50%, transparent);
+}
+.fl-e {
+  fill: none;
+  stroke: var(--line-strong);
+}
+.fl-e.on {
+  fill: var(--warn);
+  stroke: var(--warn);
+}
+.fl-row rect {
+  fill: var(--panel-solid);
+  stroke: var(--line);
+}
+.fl-row.none text {
+  fill: var(--muted);
+}
+.fl-row.hot rect {
+  fill: color-mix(in srgb, var(--accent) 18%, var(--panel-solid));
+  stroke: var(--accent);
+}
+.fl-in {
+  fill: var(--panel-solid);
+  stroke: var(--accent);
+}
+.fl-blk {
+  fill: none;
+  stroke: var(--line);
+  transition: fill 0.2s, stroke 0.2s;
+}
+.fl-block.erasing .fl-blk {
+  fill: color-mix(in srgb, var(--crit) 14%, transparent);
+  stroke: var(--crit);
+  stroke-width: 2;
+}
+.fl-page rect {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-dasharray: 4 3;
+}
+.fl-page.free text {
+  fill: var(--faint);
+}
+.fl-page.live rect {
+  fill: color-mix(in srgb, var(--accent) 22%, var(--panel-solid));
+  stroke: color-mix(in srgb, var(--accent) 60%, transparent);
+  stroke-dasharray: none;
+}
+.fl-page.live.ghost rect {
+  fill: color-mix(in srgb, var(--warn) 18%, var(--panel-solid));
+  stroke: var(--warn);
+  stroke-dasharray: 4 2;
+}
+.fl-page.stale rect {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+  stroke-dasharray: none;
+}
+.fl-page.stale text {
+  fill: var(--faint);
+  text-decoration: line-through;
+}
+.fl-page.noise rect {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.fl-page.noise text {
+  fill: var(--faint);
+  text-decoration: none;
+}
+.fl-wear-bg {
+  fill: var(--bg-2);
+}
+.fl-wear {
+  fill: var(--warn);
+}
+.fl-tok rect {
+  fill: var(--accent);
+  filter: drop-shadow(0 0 6px var(--accent));
+}
+.fl-tok.gc rect {
+  fill: var(--warn);
+  filter: drop-shadow(0 0 6px var(--warn));
+}
+.fl-scene .fl-tok text {
+  font-family: var(--mono);
+  font-weight: 700;
+  fill: var(--on-accent);
+}
+.fl-stats rect {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+}
+.fl-scene .fl-val {
+  font-family: var(--mono);
+  font-weight: 650;
+  font-size: 20px;
+}
+.fl-chip {
+  fill: color-mix(in srgb, var(--accent-alt) 10%, var(--panel-solid));
+  stroke: var(--accent-alt);
+  stroke-width: 1.5;
+}
+.fl-box {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.fl-box.fl-sep {
+  stroke: var(--ok);
+}
+.fl-key circle,
+.fl-key path {
+  fill: none;
+  stroke: var(--ok);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.fl-cross {
+  stroke: var(--crit);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.fl-link {
+  stroke: var(--accent-alt);
+  stroke-width: 2;
+}
+.fl-scene .fl-gone {
+  font-weight: 650;
+  font-size: 14px;
+  fill: var(--crit);
+}
+.fl-sim-stage {
+  margin-top: 12px;
+}
+.fl-dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px 16px;
+  margin: 12px 0 0;
+}
+.fl-dl div {
+  display: grid;
+  gap: 2px;
+}
+.fl-dl dt {
+  font-size: 11.5px;
+  color: var(--faint);
+}
+.fl-dl dd {
+  margin: 0;
+  font: 600 16px var(--mono);
+}
+.fl-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.fl-files li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 4px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  font-size: 13px;
+}
+.fl-files .lab-btn {
+  height: 26px;
+  font-size: 12px;
+}
+.lab-body:has(.fl-scene) .lab-deeper code {
+  overflow-wrap: anywhere;
+}

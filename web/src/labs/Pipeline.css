@@ -1,0 +1,379 @@
+/* Inside a CPU core */
+.pl-scene text {
+  font-family: var(--sans);
+  font-size: 12px;
+  fill: var(--text);
+}
+.pl-head {
+  font-weight: 650;
+  font-size: 14px !important;
+}
+.pl-mono,
+.pl-scene .pl-mono {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.pl-scene .pl-small {
+  font-size: 12px;
+}
+.pl-scene .pl-note {
+  font-size: 11px;
+  fill: var(--muted);
+}
+.pl-scene .pl-fine {
+  font-size: 12px;
+  fill: var(--muted);
+}
+.pl-scene .pl-label {
+  fill: var(--accent);
+  font-weight: 700;
+}
+.pl-code {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+}
+.pl-line rect {
+  fill: transparent;
+  stroke: transparent;
+  transition: fill 0.2s, stroke 0.2s;
+}
+.pl-line.on rect {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.pl-back {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+.pl-back.on {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-dasharray: none;
+}
+.pl-arrowhead {
+  fill: var(--muted);
+}
+.pl-reg rect,
+.pl-mem rect,
+.pl-box rect,
+.pl-stage rect,
+.pl-slot rect,
+.pl-unit rect {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+  transition: fill 0.2s, stroke 0.2s;
+}
+.pl-reg.lit rect {
+  fill: color-mix(in srgb, var(--accent) 22%, var(--panel-solid));
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.pl-scene .pl-reg-n,
+.pl-scene .pl-stage-n {
+  font-weight: 650;
+  font-size: 12px;
+}
+.pl-scene .pl-reg-v {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 22px;
+}
+.pl-mem.read rect {
+  fill: var(--bg-2);
+  stroke-dasharray: 4 3;
+}
+.pl-mem.read .pl-reg-v {
+  fill: var(--muted);
+}
+.pl-ptr path {
+  fill: var(--accent);
+}
+.pl-scene .pl-ptr text {
+  font-family: var(--mono);
+  font-weight: 700;
+  fill: var(--accent);
+}
+.pl-token circle {
+  fill: var(--ok);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+.pl-scene .pl-token text {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 13px;
+  fill: var(--on-accent);
+}
+
+/* 5-stage pipeline */
+.pl-stage.busy rect {
+  fill: color-mix(in srgb, var(--accent) 18%, var(--panel-solid));
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.pl-stage.wrong rect {
+  fill: color-mix(in srgb, var(--warn) 18%, var(--panel-solid));
+  stroke: var(--warn);
+}
+.pl-stage.bubble rect {
+  stroke: var(--crit);
+  stroke-dasharray: 5 4;
+  stroke-width: 2;
+}
+.pl-scene .pl-stage-i {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 16px;
+}
+.pl-stage.bubble .pl-stage-i {
+  fill: var(--crit);
+}
+.pl-flow {
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+.pl-scene .pl-cyc {
+  font-family: var(--mono);
+  font-size: 11px;
+  fill: var(--faint);
+}
+.pl-scene .pl-cyc.on {
+  fill: var(--accent);
+  font-weight: 700;
+}
+.pl-cursor {
+  fill: var(--accent-soft);
+  opacity: 0.6;
+}
+.pl-cell rect {
+  fill: color-mix(in srgb, var(--accent) 24%, var(--panel-solid));
+  stroke: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.pl-scene .pl-cell text {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 12px;
+}
+.pl-cell.s-stall rect {
+  fill: color-mix(in srgb, var(--crit) 14%, var(--panel-solid));
+  stroke: var(--crit);
+  stroke-dasharray: 3 3;
+}
+.pl-scene .pl-cell.s-stall text {
+  fill: var(--crit);
+  font-size: 11px;
+}
+.pl-row.wrong .pl-cell rect {
+  fill: color-mix(in srgb, var(--warn) 22%, var(--panel-solid));
+  stroke: var(--warn);
+}
+.pl-row.flushed {
+  opacity: 0.55;
+}
+.pl-strike {
+  stroke: var(--crit);
+  stroke-width: 2;
+}
+.pl-scene .pl-flushed-t {
+  fill: var(--crit);
+  font-weight: 700;
+}
+.pl-guess rect {
+  fill: color-mix(in srgb, var(--warn) 12%, var(--panel-solid));
+  stroke: var(--warn);
+}
+.pl-guess.bad rect {
+  fill: color-mix(in srgb, var(--crit) 12%, var(--panel-solid));
+  stroke: var(--crit);
+}
+.pl-scene .pl-sum {
+  font-size: 14px;
+}
+.pl-scene .pl-sum-v {
+  font-family: var(--mono);
+  font-weight: 700;
+  fill: var(--accent);
+}
+.pl-scene .pl-sum-k {
+  font-weight: 650;
+  fill: var(--ok);
+}
+.pl-scene .pl-bad {
+  fill: var(--crit);
+}
+
+/* Wide core */
+.pl-slot.busy rect,
+.pl-unit.busy rect {
+  fill: color-mix(in srgb, var(--accent) 22%, var(--panel-solid));
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.pl-slot.wrong rect,
+.pl-unit.wrong rect {
+  fill: color-mix(in srgb, var(--warn) 22%, var(--panel-solid));
+  stroke: var(--warn);
+}
+.pl-unit.k-fp rect {
+  stroke-dasharray: 4 3;
+}
+.pl-scene .pl-slot-op {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 13px;
+}
+.pl-pred.guess rect {
+  stroke: var(--warn);
+  stroke-width: 2;
+}
+.pl-pred.bad rect {
+  stroke: var(--crit);
+  stroke-width: 2.5;
+  fill: color-mix(in srgb, var(--crit) 12%, var(--panel-solid));
+}
+.pl-rob rect {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+}
+.pl-rob.empty rect {
+  fill: none;
+  stroke-dasharray: 3 3;
+}
+.pl-rob.exec rect {
+  fill: color-mix(in srgb, var(--accent) 30%, var(--panel-solid));
+  stroke: var(--accent);
+}
+.pl-rob.done rect {
+  fill: color-mix(in srgb, var(--ok) 28%, var(--panel-solid));
+  stroke: var(--ok);
+}
+.pl-rob.wrong:not(.flushed) rect {
+  stroke: var(--warn);
+  stroke-width: 2;
+}
+.pl-rob.flushed rect {
+  fill: color-mix(in srgb, var(--crit) 30%, var(--panel-solid));
+  stroke: var(--crit);
+}
+.pl-scene .pl-rob-op {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 11px;
+}
+.pl-scene .pl-rob-i {
+  font-size: 11px;
+  fill: var(--muted);
+}
+.pl-scene .pl-legend text {
+  font-size: 12px;
+}
+.pl-scene .pl-full {
+  fill: var(--crit);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* The guessing game */
+.pl-game-code {
+  margin: 12px 0 0;
+  overflow-x: auto;
+}
+.pl-game-code code {
+  font-size: 13px;
+  white-space: pre;
+}
+.pl-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pl-chips li {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: 4px 2px;
+  border-radius: 8px;
+  border: 1px dashed var(--line-strong);
+}
+.pl-chips li.tk,
+.pl-chips li.nt {
+  border-style: solid;
+  background: var(--bg-2);
+}
+.pl-chips li.tk .pl-chip-o {
+  color: var(--accent);
+}
+.pl-chips li.now {
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 10px var(--accent-soft);
+}
+.pl-chip-o {
+  font: 700 16px var(--mono);
+}
+.pl-chip-m {
+  display: grid;
+  gap: 1px;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+}
+.pl-chip-m .ok {
+  color: var(--ok);
+}
+.pl-chip-m .bad {
+  color: var(--crit);
+  text-decoration: line-through;
+}
+.pl-key {
+  margin: 6px 0 0;
+}
+.pl-big {
+  min-width: 130px;
+  height: 40px;
+  font-weight: 650;
+}
+.pl-counter {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 12px;
+}
+.pl-counter span {
+  display: grid;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 9px;
+  border: 1px solid var(--line-strong);
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+.pl-counter span.on {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+.pl-counter span.on.nt {
+  border-color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 16%, transparent);
+}
+.pl-seg {
+  flex-wrap: wrap;
+}
+@media (max-width: 520px) {
+  .pl-counter {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pl-big {
+    flex: 1;
+    min-width: 0;
+  }
+}

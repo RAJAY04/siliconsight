@@ -4,6 +4,8 @@ import { NA, clamp, gpuMhz, mhz, num, pct, step } from './format.ts'
 import { grid, sub, type Frac, type Rect } from './layout.ts'
 import { peakBandwidth } from './story.ts'
 import { drawTiles, useCanvasLoop, type Tile } from './loop.ts'
+import { InfoButton } from './Learn.tsx'
+import { useSimple } from './simple.ts'
 
 // Base M-series die block plan from docs/teardown-reference.md (estimated, after Apple's M3/M4 renders).
 // Die-local fractions, about 1.25:1, memory interfaces along the bottom edge facing the DRAM.
@@ -24,6 +26,19 @@ const PLAN = {
   memB: [0.5, 0.72, 0.85, 1],
   io: [0.85, 0.72, 1, 1],
 } satisfies Record<string, Frac>
+/** Which explainer each block's info button opens (panel mode only; the inset is too small for them). */
+const BLOCK_TOPICS: { k: keyof typeof PLAN; topic: string }[] = [
+  { k: 'gpu', topic: 'gpu' },
+  { k: 'p', topic: 'p-cores' },
+  { k: 'e', topic: 'e-cores' },
+  { k: 'ane', topic: 'neural-engine' },
+  { k: 'slc', topic: 'system-cache' },
+  { k: 'media', topic: 'media-engine' },
+  { k: 'display', topic: 'display-engine' },
+  { k: 'secure', topic: 'secure-enclave' },
+  { k: 'memA', topic: 'memory-interface' },
+  { k: 'io', topic: 'io-block' },
+]
 const GAP = 6
 const block = (f: Frac): Rect => {
   const r = sub(DIE, f)
@@ -61,6 +76,7 @@ type Hue = 'p' | 'e' | 'gpu' | 'ane'
  */
 export function DieMap({ hw, s, onCore, paused = false }: Props) {
   const detail = onCore != null
+  const simple = useSimple()
   const p = s.cpu.cores.filter((c) => c.kind === 'P')
   const e = s.cpu.cores.filter((c) => c.kind === 'E')
   const bw = s.memory.bandwidthGBs
@@ -143,8 +159,8 @@ export function DieMap({ hw, s, onCore, paused = false }: Props) {
           <rect key={i} x={t.x} y={t.y} width={t.w} height={t.h} rx={t.r} className="dm-base" />
         ))}
         {label(B.gpu, count('GPU', hw.gpuCores), s.gpu.usage == null ? NA : `${pct(s.gpu.usage)} · ${gpuMhz(s.gpu.freqMHz)}`)}
-        {label(B.p, `P × ${hw.pCores}`, mhz(s.cpu.pFreqMHz))}
-        {label(B.e, `E × ${hw.eCores}`, mhz(s.cpu.eFreqMHz))}
+        {label(B.p, `${simple ? 'Fast' : 'P'} × ${hw.pCores}`, mhz(s.cpu.pFreqMHz))}
+        {label(B.e, `${simple ? 'Eco' : 'E'} × ${hw.eCores}`, mhz(s.cpu.eFreqMHz))}
         {label(B.ane, count('ANE', hw.aneCores))}
         {label(B.slc, 'System cache')}
         {label(B.media, 'Media')}
@@ -165,6 +181,17 @@ export function DieMap({ hw, s, onCore, paused = false }: Props) {
           {eTiles.map((t, i) => core(e[i], t, 'e', s.cpu.eFreqMHz, e.length > MAX_PRINTED))}
         </svg>
       )}
+      {/* Pinned to each block's top right corner, in the strip above its tiles. */}
+      {detail &&
+        BLOCK_TOPICS.map(({ k, topic }) => (
+          <span
+            key={k}
+            className="die-info"
+            style={{ left: `calc(${((B[k].x + B[k].w + 6) / (VW + 12)) * 100}% - 24px)`, top: `calc(${((B[k].y + 6) / (VH + 12)) * 100}% + 2px)` }}
+          >
+            <InfoButton topic={topic} />
+          </span>
+        ))}
     </div>
   )
 }

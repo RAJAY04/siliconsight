@@ -1,0 +1,540 @@
+/* Bits, bytes and text */
+.bb-scene text {
+  font-family: var(--sans);
+  font-size: 13px;
+  fill: var(--text);
+}
+.bb-scene .bb-head {
+  font-weight: 650;
+  font-size: 17px;
+}
+.bb-scene .bb-sub {
+  fill: var(--muted);
+  font-size: 12.5px;
+}
+.bb-scene .bb-note {
+  fill: var(--muted);
+  font-size: 14px;
+}
+.bb-scene .bb-tiny {
+  fill: var(--faint);
+  font: 11px var(--mono);
+}
+.bb-scene .bb-big {
+  font: 700 26px var(--mono);
+}
+.bb-scene .bb-sum {
+  font: 650 22px var(--mono);
+  fill: var(--accent);
+}
+.bb-scene .bb-mono {
+  font: 13.5px var(--mono);
+}
+.bb-scene .bb-mono.bad,
+.bb-scene .bb-line.bad {
+  fill: var(--crit);
+}
+.bb-scene .bb-line {
+  font: 16px var(--mono);
+}
+.bb-scene .bb-line.hl {
+  fill: var(--accent);
+  font-weight: 650;
+}
+.bb-scene .bb-glyph {
+  font: 600 56px var(--sans);
+}
+.bb-scene .bb-glyph.sm {
+  font-size: 34px;
+}
+.bb-scene .bb-count {
+  font: 600 14px var(--mono);
+  fill: var(--muted);
+}
+.bb-scene .bb-unit {
+  font: 650 18px var(--mono);
+}
+.bb-scene .bb-barl {
+  font: 12.5px var(--mono);
+  fill: var(--muted);
+}
+.bb-scene .bb-barl.bin {
+  fill: var(--accent-alt);
+}
+.bb-scene .bb-legend {
+  font-size: 12.5px;
+  fill: var(--muted);
+}
+
+/* Bit cells */
+.bb-cell rect {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+  transition: fill 0.2s;
+}
+.bb-cell text {
+  font: 650 14px var(--mono) !important;
+  fill: var(--muted) !important;
+}
+.bb-cell.on rect {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+}
+.bb-cell.on text {
+  fill: var(--text) !important;
+}
+.bb-cell.sgn rect {
+  stroke: var(--warn);
+  fill: color-mix(in srgb, var(--warn) 14%, transparent);
+}
+.bb-cell.exp rect {
+  stroke: var(--accent-alt);
+  fill: color-mix(in srgb, var(--accent-alt) 14%, transparent);
+}
+.bb-cell.frc rect {
+  stroke: var(--accent);
+  fill: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.bb-cell.sgn.on rect,
+.bb-cell.exp.on rect,
+.bb-cell.frc.on rect {
+  stroke-width: 2;
+}
+.bb-cell.mark rect {
+  stroke: var(--warn);
+  fill: color-mix(in srgb, var(--warn) 16%, transparent);
+}
+.bb-cell.ghost {
+  opacity: 0.4;
+}
+.bb-cell.fly rect {
+  stroke: var(--accent);
+}
+.bb-hole {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-dasharray: 3 3;
+}
+
+/* Step 1 */
+.bb-wire,
+.bb-lever,
+.bb-gate {
+  stroke: var(--line-strong);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.bb-wire.live,
+.bb-lever.live {
+  stroke: var(--accent);
+  filter: drop-shadow(0 0 4px var(--accent));
+}
+.bb-gate {
+  stroke-dasharray: 5 4;
+  stroke-width: 2;
+}
+.bb-gate.live {
+  stroke: var(--warn);
+}
+.bb-pivot {
+  fill: var(--text);
+}
+.bb-node {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+  stroke-width: 2;
+}
+.bb-node.live {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+.bb-axis {
+  stroke: var(--line-strong);
+}
+.bb-thresh {
+  stroke: var(--faint);
+  stroke-dasharray: 4 5;
+}
+.bb-trace {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+.bb-scene .bb-bitlabel {
+  font: 700 18px var(--mono);
+  fill: var(--accent);
+}
+.bb-scene .bb-bitlabel.dim {
+  fill: var(--faint);
+}
+
+/* Step 2 */
+.bb-place circle {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+  stroke-width: 2;
+  transition: fill 0.15s;
+}
+.bb-place.on circle {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  filter: drop-shadow(0 0 6px var(--accent));
+}
+.bb-place.flip circle {
+  stroke: var(--warn);
+  stroke-width: 4;
+}
+.bb-scene .bb-pv {
+  font: 650 18px var(--mono);
+  fill: var(--faint);
+}
+.bb-scene .bb-place.on .bb-pv {
+  fill: var(--accent);
+}
+.bb-scene .bb-place .bb-big {
+  fill: var(--faint);
+}
+.bb-scene .bb-place.on .bb-big {
+  fill: var(--text);
+}
+
+/* Step 3 */
+.bb-brace {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.bb-scene .bb-hexd {
+  font: 700 40px var(--mono);
+  fill: var(--accent);
+}
+.bb-hexkey rect {
+  fill: var(--panel-solid);
+  stroke: var(--line);
+}
+.bb-hexkey.on rect {
+  stroke: var(--accent);
+  fill: var(--accent-soft);
+}
+.bb-scene .bb-hexk {
+  font: 650 16px var(--mono);
+}
+
+/* Step 4 */
+.bb-bytebox {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.bb-bar.dec {
+  fill: var(--accent);
+}
+.bb-bar.bin {
+  fill: var(--accent-alt);
+}
+
+/* Steps 5 and 6 */
+.bb-ring {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 2;
+}
+.bb-tick circle {
+  fill: var(--panel-solid);
+  stroke: var(--accent);
+}
+.bb-tick.neg circle {
+  stroke: var(--warn);
+}
+.bb-scene .bb-tick text:not(.bb-tiny) {
+  font: 650 13px var(--mono);
+}
+.bb-tick.on circle {
+  fill: var(--accent);
+}
+.bb-tick.neg.on circle {
+  fill: var(--warn);
+}
+.bb-scene .bb-tick.on text:not(.bb-tiny) {
+  fill: var(--on-accent);
+}
+.bb-tick.hot circle {
+  stroke: var(--crit);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px var(--crit));
+}
+.bb-hand {
+  stroke: var(--text);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+/* Step 7 */
+.bb-scene .bb-tag {
+  font: 600 12.5px var(--mono);
+}
+.bb-scene .bb-tag.sgn {
+  fill: var(--warn);
+}
+.bb-scene .bb-tag.exp {
+  fill: var(--accent-alt);
+}
+.bb-scene .bb-tag.frc {
+  fill: var(--accent);
+}
+.bb-panel {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+}
+
+/* Steps 8 to 11 */
+.bb-byte rect {
+  fill: var(--c, var(--accent));
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+.bb-scene .bb-byte text {
+  font: 700 15px var(--mono);
+  fill: var(--on-accent);
+}
+.bb-byte.ghost {
+  opacity: 0.35;
+}
+.bb-byte.b0,
+.bb-byte.u1 {
+  --c: var(--accent);
+}
+.bb-byte.b1,
+.bb-byte.u2 {
+  --c: var(--ok);
+}
+.bb-byte.b2,
+.bb-byte.u3 {
+  --c: var(--warn);
+}
+.bb-byte.b3,
+.bb-byte.u4 {
+  --c: var(--accent-alt);
+}
+.bb-slot {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-dasharray: 4 4;
+}
+
+/* Try it cards */
+.bb-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bb-presets .lab-btn {
+  font-family: var(--mono);
+  font-size: 12.5px;
+}
+.bb-presets .lab-btn[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.bb-wide {
+  width: 100%;
+  max-width: 340px;
+}
+.bb-wide input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.bb-out {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 10px 16px;
+  margin: 14px 0 0;
+  align-items: start;
+}
+.bb-out dt {
+  font-size: 12px;
+  color: var(--faint);
+  padding-top: 4px;
+}
+.bb-out dd {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+@media (max-width: 560px) {
+  .bb-out {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .bb-out dd {
+    margin-bottom: 8px;
+  }
+}
+.bb-bits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bb-bits-byte {
+  display: inline-flex;
+  gap: 2px;
+}
+.bb-bit {
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-solid);
+  color: var(--faint);
+  font: 600 12.5px var(--mono);
+}
+.bb-bit.on {
+  color: var(--text);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.bb-bit.sgn {
+  border-color: var(--warn);
+}
+.bb-bit.exp {
+  border-color: var(--accent-alt);
+}
+.bb-bit.sgn.on {
+  background: color-mix(in srgb, var(--warn) 25%, transparent);
+}
+.bb-bit.exp.on {
+  background: color-mix(in srgb, var(--accent-alt) 25%, transparent);
+}
+.bb-fl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.bb-fl .sgn {
+  color: var(--warn);
+}
+.bb-fl .exp {
+  color: var(--accent-alt);
+}
+.bb-fl .frc {
+  color: var(--accent);
+}
+.bb-warn {
+  font-size: 13px;
+  color: var(--warn);
+}
+.bb-mem {
+  display: inline-flex;
+  gap: 4px;
+}
+.bb-mem-cell {
+  display: grid;
+  justify-items: center;
+  min-width: 44px;
+  padding: 4px 6px;
+  border-radius: 7px;
+  border: 1px dashed var(--line-strong);
+  background: var(--bg-2);
+  font: 600 14px var(--mono);
+}
+.bb-mem-a {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--faint);
+}
+.bb-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 14px 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.bb-counts b {
+  font-size: 20px;
+  color: var(--text);
+  margin-right: 4px;
+}
+.bb-chars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bb-chars li {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--c, var(--line-strong));
+  background: color-mix(in srgb, var(--c, transparent) 10%, transparent);
+}
+.bb-chars .u1,
+.bb-legend-row .u1 {
+  --c: var(--accent);
+}
+.bb-chars .u2,
+.bb-legend-row .u2 {
+  --c: var(--ok);
+}
+.bb-chars .u3,
+.bb-legend-row .u3 {
+  --c: var(--warn);
+}
+.bb-chars .u4,
+.bb-legend-row .u4 {
+  --c: var(--accent-alt);
+}
+.bb-ch {
+  font-size: 22px;
+  line-height: 1.2;
+}
+.bb-cp {
+  font-size: 11.5px;
+  color: var(--faint);
+}
+.bb-bs {
+  font: 600 12.5px var(--mono);
+  color: var(--c);
+}
+.bb-more {
+  align-self: center;
+  color: var(--faint);
+  border: 0 !important;
+}
+.bb-legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 10px 0 0;
+}
+.bb-legend-row span {
+  padding-left: 14px;
+  position: relative;
+}
+.bb-legend-row span::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-top: -5px;
+  border-radius: 3px;
+  background: var(--c);
+}
+
+/* Long live values get two columns of the shared strip. */
+.bb-span2 {
+  grid-column: span 2;
+  min-width: 0;
+}

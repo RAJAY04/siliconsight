@@ -1,14 +1,22 @@
 import { memo, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import type { Hardware, Sample } from './types.ts'
 import type { Lane } from './layout.ts'
+import type { Live } from './useStream.ts'
 import { clamp, memGB, rate, step, watts } from './format.ts'
-import { clusterAvg, peakBandwidth, socW, usedBytes } from './story.ts'
+import { clusterAvg, peakBandwidth, sensorsOf, socW, usedBytes } from './story.ts'
 import { drawTiles, useCanvasLoop, type Tile } from './loop.ts'
-import { D, W, box, grid, sub, KEY_ROWS, type Geometry, type Rect, geometry, AIR } from './layout.ts'
+import { InfoButton } from './Learn.tsx'
+import { useSimple } from './simple.ts'
+import { D, W, box, grid, sub, KEY_ROWS, LID_NEARLY_CLOSED, lidLabel, lidTilt, type Geometry, type Rect, geometry, AIR } from './layout.ts'
+import { PARTS, type PartKey } from './parts.ts'
+import { DEFAULT_EXPLODE } from './orbit.ts'
+import { FocusCard, OrbitControls, useOrbit, useOrbitInput } from './Orbit.tsx'
+import { BatteryDetail, BoardDetail, CameraDetail, ChargeFlow, DisplayDetail, TrackpadDetail } from './Detail.tsx'
+import { mediaOf } from './inside.ts'
 
 const AIR_GEOMETRY = geometry(AIR)
 
-export type View = 'chip' | 'memory' | 'battery' | 'io' | 'power'
+export type View = 'chip' | 'memory' | 'battery' | 'io' | 'power' | 'sensors' | 'learn' | 'play' | 'lesson' | 'labs'
 
 // Scene box after projection, used to fit the stage.
 const BOX_W = 740
@@ -40,7 +48,7 @@ function socTiles(g: Geometry, hw: Hardware, s: Sample): Tile[] {
 }
 
 /** What the canvas loop reads each frame. Written once per sample. */
-type Drive = { mem: number; llm: boolean; read: number; write: number; net: number; tiles: Tile[]; at: number; t: number }
+type Drive = { mem: number; llm: boolean; read: number; write: number; net: number; tiles: Tile[]; at: number; t: number; audio: boolean }
 type Particle = { l: Lane; d: number; v: number; back: boolean; a: number }
 
 /**
@@ -105,6 +113,16 @@ function useBoardCanvas(canvas: React.RefObject<HTMLCanvasElement | null>, drive
       }
 
       ctx.clearRect(0, 0, W, D)
+      if (dr.audio) {
+        // Speaker grilles breathe while audio plays; on the board's idle clock, so it costs no extra frames.
+        ctx.globalAlpha = still ? 0.3 : 0.16 + 0.2 * (0.5 + 0.5 * Math.sin(t * 5.3))
+        ctx.fillStyle = S.colors.b
+        for (const r of g.SPEAKERS) {
+          ctx.beginPath()
+          ctx.roundRect(r.x + 3, r.y + 5, r.w - 6, r.h - 7, 3)
+          ctx.fill()
+        }
+      }
       drawTiles(ctx, dr.tiles.map((k) => ({ ...k, color: S.colors[k.color as 'a' | 'b' | 'w'] })), t, still)
       // NAND flashes fade over 0.9 s after each sample; held at their level under reduced motion.
       // Only real disk work flashes (about 1 MB/s and up); the background trickle stays dark.
@@ -154,12 +172,14 @@ function useBoardCanvas(canvas: React.RefObject<HTMLCanvasElement | null>, drive
   )
 }
 
-function Hit({ view, label, r, onOpen, children }: { view: View; label: string; r: Rect; onOpen: Props['onOpen']; children?: React.ReactNode }) {
-  // Mouse target only; keyboard users reach the same view through the billboard tag button.
+/**
+ * A pointer target for one part. The stage's pointer handler finds it by data-part (see useOrbitInput), so a press
+ * can still become a drag. Keyboard users reach the same parts through the toolbar's part list and the labels.
+ */
+function Hit({ part, r, rx = 7 }: { part: PartKey; r: Rect; rx?: number }) {
   return (
-    <g className="hit" onClick={(e) => onOpen(view, e.currentTarget)} aria-label={label}>
-      {children}
-      <rect className="hl" x={r.x - 4} y={r.y - 4} width={r.w + 8} height={r.h + 8} rx={7} />
+    <g className="hit" data-part={part}>
+      <rect className="hl" x={r.x - 4} y={r.y - 4} width={r.w + 8} height={r.h + 8} rx={rx} />
     </g>
   )
 }
@@ -305,7 +325,8 @@ const BoardStatic = memo(function BoardStatic({ g, chipShort, pCores, eCores, gp
 
 const rectProps = (r: Rect) => ({ x: r.x, y: r.y, width: r.w, height: r.h })
 
-function Board({ g, hw, s, llm, onOpen }: { g: Geometry; hw: Hardware; s: Sample; llm: boolean; onOpen: Props['onOpen'] }) {
+function Board({ g, hw, s, llm, mic, focus }: { g: Geometry; hw: Hardware; s: Sample; llm: boolean; mic: boolean; focus: PartKey | null }) {
+  const mics = box(g.L.mics)
   const chipShort = hw.chip.replace(/^Apple\s+/, '')
   const w = socW(s)
   // Without power numbers, glow from CPU and GPU usage instead.
@@ -332,20 +353,31 @@ function Board({ g, hw, s, llm, onOpen }: { g: Geometry; hw: Hardware; s: Sample
         ))}
         <rect {...rectProps(sub(g.PMU, [0.04, 0.06, 0.62, 0.46]))} rx="2" className="pmu-fill" style={{ opacity: step((s.power.systemW ?? w ?? 0) / 30) }} />
       </g>
+      {/* Three-mic array by the hinge; orange while an app records, like the macOS indicator. */}
+      <g className={`mics ${mic ? 'on' : ''}`}>
+        {mic && <ellipse cx={mics.x + mics.w / 2} cy={mics.y + mics.h / 2} rx={mics.w} ry={mics.h * 1.4} className="mic-halo" />}
+        {[0.15, 0.5, 0.85].map((f) => (
+          <circle key={f} cx={mics.x + mics.w * f} cy={mics.y + mics.h / 2} r="2.2" className="mic" />
+        ))}
+      </g>
       {llm && <rect className="llm-path" x={g.GPU_R.x - 2} y={g.GPU_R.y - 2} width={g.GPU_R.w + 4} height={g.DRAM[0].y + g.DRAM[0].h - g.GPU_R.y + 4} rx="3" />}
       <ellipse cx={cx} cy={cy} rx={g.PKG.w * 0.75} ry={g.PKG.h * 0.75} fill="url(#heat-spread)" className="haze" />
-      <Hit view="chip" label={`${hw.chip} chip`} r={g.DIE} onOpen={onOpen} />
+      {focus && PARTS[focus].layer === 1 && <BoardDetail k={focus} g={g} hw={hw} s={s} />}
+      <Hit part="soc" r={g.DIE} />
       {g.DRAM.map((r, i) => (
-        <Hit key={i} view="memory" label="Unified memory" r={r} onOpen={onOpen} />
+        <Hit key={i} part="memory" r={r} />
       ))}
-      <Hit view="io" label="SSD storage" r={g.NAND} onOpen={onOpen} />
-      <Hit view="io" label="Wi-Fi" r={g.WIFI} onOpen={onOpen} />
-      <Hit view="power" label="Power delivery" r={g.PMU} onOpen={onOpen} />
+      <Hit part="ssd" r={g.NAND} />
+      <Hit part="wifi" r={g.WIFI} />
+      <Hit part="power" r={g.PMU} />
+      {g.SPEAKERS.map((r, i) => (
+        <Hit key={i} part="speakers" r={r} />
+      ))}
     </svg>
   )
 }
 
-function BatteryLayer({ g, b, onOpen }: { g: Geometry; b: NonNullable<Sample['battery']>; onOpen: Props['onOpen'] }) {
+function BatteryLayer({ g, b }: { g: Geometry; b: NonNullable<Sample['battery']> }) {
   const f = clamp(b.percent / 100)
   const state = b.percent < 20 && !b.acAttached ? 'low' : b.chargeHeld ? 'held' : b.charging ? 'charging' : ''
   return (
@@ -359,7 +391,7 @@ function BatteryLayer({ g, b, onOpen }: { g: Geometry; b: NonNullable<Sample['ba
       <rect {...rectProps(g.TRAY)} rx="12" fill="none" stroke="var(--cell-edge)" strokeDasharray="3 4" opacity="0.7" />
       {/* Trackpad cable from the board connector to the trackpad. */}
       <rect x={g.CONN.x + g.CONN.w / 2 - 6} y={g.CONN.y + g.CONN.h} width="12" height={box(g.L.trackpad).y - g.CONN.y - g.CONN.h} fill="var(--flex)" />
-      <g className="hit" onClick={(e) => onOpen('battery', e.currentTarget)} aria-label="Battery">
+      <g className="hit" data-part="battery">
         {g.CELLS.map((r, i) => {
           // Fill along the long side: tall outer cells fill from the front edge, wide inner cells from the left.
           const tall = r.h > r.w
@@ -392,46 +424,228 @@ function BatteryLayer({ g, b, onOpen }: { g: Geometry; b: NonNullable<Sample['ba
   )
 }
 
-const Deck = memo(function Deck({ g }: { g: Geometry }) {
-  const tp = box(g.L.trackpad)
+const Deck = memo(function Deck({ g, kb, detail }: { g: Geometry; kb: number; detail: boolean }) {
+  const tp = g.TRACKPAD
   const touchId = g.KEYS[KEY_ROWS[0].length - 1]
+  const kbr = box(g.L.keyboard)
   return (
-    <svg viewBox={`0 0 ${W} ${D}`} className="layer-svg ghost">
+    <svg viewBox={`0 0 ${W} ${D}`} className="layer-svg ghost" style={{ '--kb': kb } as CSSProperties}>
+      <defs>
+        <radialGradient id="backlight">
+          <stop offset="0" stopColor="var(--key-glow)" stopOpacity="0.35" />
+          <stop offset="1" stopColor="var(--key-glow)" stopOpacity="0" />
+        </radialGradient>
+      </defs>
       <rect x="1" y="1" width={W - 2} height={D - 2} rx="20" className="ghost-body" />
       {/* The top case is the heatsink: the SoC warms it through a thermal pad. */}
       <HeatSpread g={g} rx={150} ry={110} />
+      {kb > 0 && <ellipse cx={kbr.x + kbr.w / 2} cy={kbr.y + kbr.h / 2} rx={kbr.w * 0.6} ry={kbr.h * 0.75} fill="url(#backlight)" className="backlight" />}
       {g.KEYS.map((k, i) => (
         <rect key={i} {...rectProps(k)} rx="3" className="ghost-key" />
       ))}
       <circle cx={touchId.x + touchId.w / 2} cy={touchId.y + touchId.h / 2} r={touchId.h / 2 - 2.5} className="ghost-line" />
       <rect {...rectProps(tp)} rx="12" className="ghost-line trackpad" />
+      {detail && <TrackpadDetail g={g} />}
+      <Hit part="trackpad" r={tp} rx={14} />
     </svg>
   )
 })
 
-const Display = memo(function Display({ g }: { g: Geometry }) {
+const Display = memo(function Display({
+  g,
+  glow,
+  camera,
+  mic,
+  focus,
+  isp,
+}: {
+  g: Geometry
+  glow: number | null
+  camera: boolean
+  mic: boolean
+  /** The focused part when it is on the lid; only then are the close-up drawings mounted. */
+  focus: 'display' | 'camera' | null
+  isp: number | null
+}) {
   const panel = box(g.L.panel)
   const n = box(g.L.notch)
+  const cx = n.x + n.w / 2
+  const cy = n.y + n.h / 2
+  // macOS shows one dot in the menu bar: green while the camera runs (with or without the mic), orange for the mic alone.
+  const dot = camera ? 'cam' : mic ? 'mic' : null
   return (
     <svg viewBox={`0 0 ${W} ${D}`} className="layer-svg ghost">
+      <defs>
+        <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="var(--screen-1)" />
+          <stop offset="1" stopColor="var(--screen-2)" />
+        </linearGradient>
+        <radialGradient id="cam-halo">
+          <stop offset="0" stopColor="var(--cam)" stopOpacity="0.6" />
+          <stop offset="1" stopColor="var(--cam)" stopOpacity="0" />
+        </radialGradient>
+      </defs>
       <rect x="1" y="1" width={W - 2} height={D - 2} rx="20" className="ghost-body" />
+      {glow != null && <rect {...rectProps(panel)} rx="10" fill="url(#screen)" className="screen-glow" style={{ opacity: 0.05 + glow * 0.3 }} />}
       <rect {...rectProps(panel)} rx="10" className="ghost-line" />
       <path d={`M ${n.x} ${n.y} h ${n.w} v ${n.h - 5} q 0 5 -5 5 h ${-(n.w - 10)} q -5 0 -5 -5 z`} className="notch" />
+      {camera && <circle cx={cx} cy={cy} r="14" fill="url(#cam-halo)" />}
+      <circle cx={cx} cy={cy} r="3" className={`lens ${camera ? 'on' : ''}`} />
+      {dot && <circle cx={n.x + n.w + 12} cy={cy} r="3.2" className={`menu-dot ${dot}`} />}
+      {focus === 'display' && <DisplayDetail g={g} brightness={glow} />}
+      {focus === 'camera' && <CameraDetail g={g} on={camera} isp={isp} />}
+      <Hit part="display" r={panel} rx={12} />
+      <Hit part="camera" r={n} rx={5} />
     </svg>
   )
 })
 
-type Props = { hw: Hardware; s: Sample; systemW: number | null; llm: boolean; onOpen: (v: View, el: Element) => void; hidden?: boolean }
+const PAD = 14
+const TRAIL_MS = 260
+/** A finger with no fast message for this long counts as lifted: a backlogged socket can drop the lift message. */
+const STALE_MS = 250
+
+/**
+ * The fast channel: trackpad fingers drawn on a small canvas over the drawn trackpad, and the lid eased toward its
+ * reading. Runs on the shared loop at 36 fps while a finger is down, 18 while the lid moves, and sleeps otherwise.
+ */
+function useFastLayer(
+  canvas: React.RefObject<HTMLCanvasElement | null>,
+  lidEl: React.RefObject<HTMLDivElement | null>,
+  tag: React.RefObject<HTMLSpanElement | null>,
+  live: Live,
+  tp: Rect,
+  paused: boolean,
+  stamp: number,
+) {
+  const st = useRef({ lid: null as number | null, shown: '', seen: 0, drawn: false, trails: new Map<number, { x: number; y: number; t: number }[]>(), color: '', colorAt: -9 })
+  const wake = useCanvasLoop(
+    canvas,
+    tp.w + 2 * PAD,
+    (ctx, t, dt, still) => {
+      const S = st.current
+      const now = performance.now()
+      const target = live.lid
+      if (target == null || S.lid == null || still) S.lid = target
+      else S.lid = Math.abs(target - S.lid) < 0.1 ? target : S.lid + (target - S.lid) * (1 - Math.exp(-dt * 7))
+      // Touch the DOM only when the drawn tilt or the label text changes.
+      const tilt = S.lid == null ? '' : lidTilt(S.lid).toFixed(2)
+      const label = S.lid == null ? '' : lidLabel(S.lid)
+      if (tilt + label !== S.shown) {
+        S.shown = tilt + label
+        if (lidEl.current) {
+          lidEl.current.style.transform = tilt ? `rotateX(-${tilt}deg)` : ''
+          lidEl.current.classList.toggle('closing', S.lid != null && S.lid < LID_NEARLY_CLOSED)
+        }
+        if (tag.current) tag.current.textContent = label || 'Sensors'
+      }
+
+      const fingers = now - live.at < STALE_MS ? (live.fingers ?? []) : []
+      if (still) S.trails.clear()
+      else {
+        if (live.at !== S.seen) {
+          S.seen = live.at
+          for (const f of fingers) {
+            const tr = S.trails.get(f.id) ?? []
+            tr.push({ x: clamp(f.x), y: clamp(f.y), t: now })
+            S.trails.set(f.id, tr)
+          }
+        }
+        for (const [id, tr] of S.trails) {
+          while (tr.length && now - tr[0].t > TRAIL_MS) tr.shift()
+          if (!tr.length) S.trails.delete(id)
+        }
+      }
+      if (!fingers.length && !S.trails.size) {
+        if (S.drawn) ctx.clearRect(0, 0, tp.w + 2 * PAD, tp.h + 2 * PAD)
+        S.drawn = false
+        return target !== S.lid ? true : 'sleep'
+      }
+      if (still || t - S.colorAt > 2) {
+        S.color = getComputedStyle(ctx.canvas).getPropertyValue('--finger').trim()
+        S.colorAt = t
+      }
+      const X = (x: number) => PAD + clamp(x) * tp.w
+      // The reader's y runs front to back; the drawing's runs from the hinge to the front.
+      const Y = (y: number) => PAD + (1 - clamp(y)) * tp.h
+      ctx.clearRect(0, 0, tp.w + 2 * PAD, tp.h + 2 * PAD)
+      ctx.strokeStyle = ctx.fillStyle = S.color
+      // The trackpad's outline lights up while it is touched.
+      ctx.globalAlpha = fingers.length ? 0.45 : 0.2
+      ctx.lineWidth = 1.2
+      ctx.beginPath()
+      ctx.roundRect(PAD, PAD, tp.w, tp.h, 12)
+      ctx.stroke()
+      ctx.lineCap = 'round'
+      for (const tr of S.trails.values()) {
+        for (let i = 1; i < tr.length; i++) {
+          const age = 1 - (now - tr[i].t) / TRAIL_MS
+          ctx.globalAlpha = 0.45 * age
+          ctx.lineWidth = 2 + 6 * age
+          ctx.beginPath()
+          ctx.moveTo(X(tr[i - 1].x), Y(tr[i - 1].y))
+          ctx.lineTo(X(tr[i].x), Y(tr[i].y))
+          ctx.stroke()
+        }
+      }
+      for (const f of fingers) {
+        const r = 5 + 9 * clamp(f.size)
+        ctx.globalAlpha = 0.25
+        ctx.beginPath()
+        ctx.arc(X(f.x), Y(f.y), r + 4, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.globalAlpha = 0.9
+        ctx.beginPath()
+        ctx.arc(X(f.x), Y(f.y), r, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.globalAlpha = 1
+      S.drawn = true
+      return 'fast'
+    },
+    paused,
+    stamp,
+  )
+  useEffect(() => {
+    live.onChange = wake
+    wake()
+    return () => {
+      live.onChange = () => {}
+    }
+  }, [live, wake])
+}
+
+type Props = {
+  hw: Hardware
+  s: Sample
+  live: Live
+  systemW: number | null
+  llm: boolean
+  onOpen: (v: View, el: Element) => void
+  /** The panel docked beside the scene, if any; the camera flies to its part and stays live. */
+  panel: View | null
+  /** With a lesson docked: the part it is about, or null for the whole Mac. */
+  part?: PartKey | null
+  hidden?: boolean
+}
 
 type CalloutKey = 'power' | 'memory' | 'wifi' | 'ssd' | 'battery'
 /** Which side of the scene each label sits on, in reading order; the chip has the magnified inset instead. */
 const SIDES: { left: CalloutKey[]; right: CalloutKey[] } = { left: ['power', 'memory'], right: ['wifi', 'ssd', 'battery'] }
-const PILL_W = 132
-const PILL_H = 44
-/** Room kept clear at each side of the scene for the labels; they may overlap the outer glass edges. */
-const SIDE_ROOM = 64
+const PILL_W = 120
+const PILL_H = 42
+/** Room kept clear at each side of the scene for the labels, so they sit beside the laptop and not on it. */
+const SIDE_ROOM = PILL_W + 16
+/** Size of the drawn stack at the home view with the lid up (measured), plus a little air; sets the scale. */
+const LAPTOP_W = 720
+const LAPTOP_H = 640
 /** Strip kept clear along the bottom for the LLM note and the hint, so neither sits on the laptop. */
 const FOOT_ROOM = 60
+/** Where `.iso` sits in the scene box (styles.css); the camera's screen points are in its coordinates. */
+const ISO_LEFT = 55
+const ISO_TOP = 195
+/** Width of the close-up caption card plus its margin, kept clear on the right when the stage is wide. */
+const CARD_ROOM = 300
 type Pt = { x: number; y: number }
 
 /** A zero-size point on a layer. Its projected screen position is where a leader line ends. */
@@ -452,15 +666,178 @@ function stack(keys: CalloutKey[], at: Partial<Record<CalloutKey, Pt>>, h: numbe
   return out
 }
 
-export function Scene({ hw, s, systemW, llm, onOpen, hidden }: Props) {
+type Label = { view: View; topic: string; title: string; value: string }
+
+/**
+ * Side labels with leader lines to their parts. Its own component, so following the camera every frame
+ * re-renders only the labels and not the scene.
+ */
+function Callouts({ stage, labels, size, open, onOpen, bus }: { stage: React.RefObject<HTMLDivElement | null>; labels: Record<CalloutKey, Label | null>; size: { w: number; h: number }; open: boolean; onOpen: Props['onOpen']; bus: React.RefObject<() => void> }) {
+  const [at, setAt] = useState<Partial<Record<CalloutKey, Pt>>>({})
+  bus.current = () => {
+    const el = stage.current
+    // Hidden from below and in a close-up (styles.css), so not worth measuring there.
+    if (!el || el.hasAttribute('data-under') || el.dataset.focus) return
+    const o = el.getBoundingClientRect()
+    const next: Partial<Record<CalloutKey, Pt>> = {}
+    for (const a of el.querySelectorAll<HTMLElement>('[data-anchor]')) {
+      const r = a.getBoundingClientRect()
+      const p = { x: r.left - o.left, y: r.top - o.top }
+      // A part zoomed or turned out of the stage loses its label rather than pointing off the edge.
+      if (p.x > 0 && p.y > 0 && p.x < o.width && p.y < o.height) next[a.dataset.anchor as CalloutKey] = p
+    }
+    setAt(next)
+  }
+  useEffect(
+    () => () => {
+      bus.current = () => {}
+    },
+    [bus],
+  )
+  const ys = { ...stack(SIDES.left, at, size.h), ...stack(SIDES.right, at, size.h) }
+  return (
+    <div className={`callouts ${open ? 'open' : ''}`}>
+      <svg className="leaders" width={size.w} height={size.h}>
+        {(['left', 'right'] as const).flatMap((side) =>
+          SIDES[side].map((k) => {
+            const a = at[k]
+            const y = ys[k]
+            if (!a || y == null || !labels[k]) return null
+            const x = side === 'left' ? 12 + PILL_W : size.w - 12 - PILL_W
+            return (
+              <g key={k}>
+                <path d={`M ${x} ${y + PILL_H / 2} H ${x + (side === 'left' ? 14 : -14)} L ${a.x} ${a.y}`} className="leader" />
+                <circle cx={a.x} cy={a.y} r="3" className="leader-dot" />
+              </g>
+            )
+          }),
+        )}
+      </svg>
+      {(['left', 'right'] as const).flatMap((side) =>
+        // Top to bottom, so Tab follows what the eye sees.
+        [...SIDES[side]].sort((a, b) => (ys[a] ?? 0) - (ys[b] ?? 0)).map((k) => {
+          const l = labels[k]
+          const y = ys[k]
+          if (!l || y == null || !at[k]) return null
+          return (
+            <div key={k} className="callout-wrap" style={{ top: y, [side]: 12, width: PILL_W, height: PILL_H }}>
+              <button className="callout" aria-label={`${l.title}, ${l.value}. Open details.`} onClick={(e) => onOpen(l.view, e.currentTarget)}>
+                <span className="tag-title">{l.title}</span>
+                <span className="tag-value">{l.value}</span>
+              </button>
+              {/* Top right, beside the short title; the longer value runs below it. */}
+              <InfoButton topic={l.topic} className="callout-info" />
+            </div>
+          )
+        }),
+      )}
+    </div>
+  )
+}
+
+/** The bottom case seen from below: plain aluminium, four feet, four pentalobe screws, no vents. */
+const Underside = memo(function Underside({ g }: { g: Geometry }) {
+  // Drawn mirrored (x becomes W - x) because the face is turned over with rotateY; seen from below it reads true.
+  const heat = { x: W - (g.PKG.x + g.PKG.w / 2), y: g.PKG.y + g.PKG.h / 2 }
+  return (
+    <svg viewBox={`0 0 ${W} ${D}`} className="layer-svg underside" aria-hidden>
+      <defs>
+        <linearGradient id="alu-under" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="var(--alu-2)" />
+          <stop offset="0.55" stopColor="var(--alu-1)" />
+          <stop offset="1" stopColor="var(--alu-2)" />
+        </linearGradient>
+      </defs>
+      <rect x="1" y="1" width={W - 2} height={D - 2} rx="20" fill="url(#alu-under)" stroke="var(--alu-edge)" />
+      <ellipse cx={heat.x} cy={heat.y} rx={190} ry={140} fill="url(#heat-spread)" className="heat-spread" />
+      {[
+        [40, 34],
+        [W - 40, 34],
+        [40, D - 34],
+        [W - 40, D - 34],
+      ].map(([x, y], i) => (
+        <g key={i}>
+          <ellipse cx={x} cy={y} rx="16" ry="12" className="foot" />
+          <circle cx={x + (x < W / 2 ? 30 : -30)} cy={y} r="2.6" className="screw" />
+        </g>
+      ))}
+    </svg>
+  )
+})
+
+/** Which part a panel is about, so opening one from a label or the rail flies the camera there. */
+const VIEW_PART: Partial<Record<View, PartKey>> = { chip: 'soc', memory: 'memory', battery: 'battery', io: 'ssd', power: 'power', sensors: 'display' }
+
+export function Scene({ hw, s, live, systemW, llm, onOpen, panel, part, hidden }: Props) {
   const stage = useRef<HTMLDivElement>(null)
+  const iso = useRef<HTMLDivElement>(null)
+  const layerEls = useRef<(HTMLDivElement | null)[]>([])
+  const guideEls = useRef<(HTMLDivElement | null)[]>([])
   const canvas = useRef<HTMLCanvasElement>(null)
-  const drive = useRef<Drive>({ mem: 0, llm: false, read: 0, write: 0, net: 0, tiles: [], at: 0, t: 0 })
+  const padCanvas = useRef<HTMLCanvasElement>(null)
+  const lidEl = useRef<HTMLDivElement>(null)
+  const lidTag = useRef<HTMLSpanElement>(null)
+  const measure = useRef(() => {})
+  const drive = useRef<Drive>({ mem: 0, llm: false, read: 0, write: 0, net: 0, tiles: [], at: 0, t: 0, audio: false })
   const [size, setSize] = useState({ w: 0, h: 0 })
   const [open, setOpen] = useState(reduced())
-  const [at, setAt] = useState<Partial<Record<CalloutKey, Pt>>>({})
   const g = AIR_GEOMETRY
-  const fit = Math.min((size.w - 2 * SIDE_ROOM) / BOX_W, (size.h - FOOT_ROOM) / BOX_H, 1.3)
+  // On a phone the side labels would cover the whole laptop; the rail below has the same readings.
+  const compact = size.w < 560
+  const fit = Math.max(0.1, Math.min((size.w - 2 * (compact ? 8 : SIDE_ROOM)) / LAPTOP_W, (size.h - FOOT_ROOM) / LAPTOP_H, 1.3))
+  const view = useRef({ size, fit, panel })
+  view.current = { size, fit, panel }
+
+  const { api, focus, under } = useOrbit(
+    { stage, iso, layers: layerEls, guides: guideEls },
+    {
+      lid: () => live.lid,
+      // The middle of the free part of the stage in .iso coordinates, and its size: the caption card takes the
+      // right side of a wide stage and the bottom of a narrow one. With a panel docked the card hides.
+      screen: () => {
+        const { size: z, fit: f, panel: p } = view.current
+        let x = BOX_W / 2 - ISO_LEFT
+        let y = BOX_H / 2 - ISO_TOP + FOOT_ROOM / 2 / f
+        let [w, h] = [z.w, z.h - 90]
+        if (p) {
+          h -= 40
+          // On phones the panel is a drawer over the bottom of the scene: frame the part in what still shows.
+          const d = document.querySelector<HTMLElement>('.main.docked .detail')
+          const s = stage.current?.getBoundingClientRect()
+          // The toolbar sits under the drawer there, so only the lid row at the top needs room kept.
+          if (d && s && matchMedia('(max-width: 820px)').matches) {
+            const covered = Math.max(0, Math.min(z.h - 120, s.bottom - (innerHeight - d.offsetHeight)))
+            y = BOX_H / 2 - ISO_TOP + (30 - covered / 2) / f
+            h = z.h - covered - 60
+          }
+        } else if (z.w > 640) {
+          x -= CARD_ROOM / 2 / f
+          w -= CARD_ROOM
+        } else {
+          y -= (0.25 * z.h) / f
+          h *= 0.5
+        }
+        return { x, y, room: Math.min(w, h) / f }
+      },
+      onFrame: () => {
+        measure.current()
+        stage.current?.dispatchEvent(new Event('scenemove', { bubbles: true }))
+      },
+      onRest: () => measure.current(),
+    },
+  )
+  // With a part's panel docked, clicking another part swaps the panel to it as well; a lesson stays put.
+  const swaps = (k: PartKey) => !!panel && panel !== 'lesson' && PARTS[k].view !== panel
+  const focusPart = (k: PartKey | null, openPanel = false) => {
+    if (k && openPanel) onOpen(PARTS[k].view, stage.current!)
+    api.setFocus(k)
+  }
+  useOrbitInput(stage, api, (k, _x, _y, openNow) => {
+    // From below only the bottom case shows; the parts behind it are not what was clicked.
+    if (under) return
+    if (!k) return api.focus() && focusPart(null)
+    focusPart(k, openNow || swaps(k))
+  })
 
   useLayoutEffect(() => {
     const el = stage.current!
@@ -469,28 +846,68 @@ export function Scene({ hw, s, systemW, llm, onOpen, hidden }: Props) {
     return () => ro.disconnect()
   }, [])
   useEffect(() => {
-    if (open) return
-    const id = setTimeout(() => setOpen(true), 250)
+    if (open) return api.setExplode(api.explode || DEFAULT_EXPLODE, false)
+    const id = setTimeout(() => {
+      setOpen(true)
+      api.setExplode(DEFAULT_EXPLODE, true)
+    }, 250)
     return () => clearTimeout(id)
-  }, [open])
-  // Anchors only move when the stage resizes or the layers finish sliding apart, so measure then, not every frame.
+  }, [open, api])
+  // The labels follow every camera frame; besides that they only move when the stage resizes.
   useEffect(() => {
-    const el = stage.current!
-    const measure = () => {
-      if (hidden) return
-      const o = el.getBoundingClientRect()
-      const next: Partial<Record<CalloutKey, Pt>> = {}
-      for (const a of el.querySelectorAll<HTMLElement>('[data-anchor]')) {
-        const r = a.getBoundingClientRect()
-        next[a.dataset.anchor as CalloutKey] = { x: r.left - o.left, y: r.top - o.top }
-      }
-      setAt(next)
-    }
-    measure()
-    el.addEventListener('transitionend', measure)
-    return () => el.removeEventListener('transitionend', measure)
+    if (!hidden) measure.current()
   }, [size, fit, open, hidden])
+  useEffect(() => api.refocus(), [size.w, size.h, api])
+  useEffect(() => {
+    if (!panel) return
+    const cur = api.focus()
+    if (panel === 'lesson') {
+      const to = part && (part !== 'battery' || s.battery) ? part : null
+      if (to !== cur) api.setFocus(to)
+      return
+    }
+    const k = VIEW_PART[panel]
+    if (cur && PARTS[cur].view === panel) return
+    if (k && (k !== 'battery' || s.battery)) api.setFocus(k)
+    // Only when a panel or lesson opens or changes; closing it keeps the close-up.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panel, part, api])
+  // Esc leaves the close-up; an open panel or explainer takes Esc first.
+  useEffect(() => {
+    if (!focus || panel || hidden) return
+    const on = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || document.querySelector('dialog[open]')) return
+      focusPart(null)
+      stage.current?.focus({ preventScroll: true })
+    }
+    addEventListener('keydown', on)
+    return () => removeEventListener('keydown', on)
+  })
 
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.target !== e.currentTarget || e.metaKey || e.ctrlKey || e.altKey) return
+    const keys: Record<string, () => void> = {
+      ArrowLeft: () => api.turn(15, 0),
+      ArrowRight: () => api.turn(-15, 0),
+      ArrowUp: () => api.turn(0, 10),
+      ArrowDown: () => api.turn(0, -10),
+      '+': () => api.zoomBy(1.25),
+      '=': () => api.zoomBy(1.25),
+      '-': () => api.zoomBy(0.8),
+      _: () => api.zoomBy(0.8),
+      '0': () => api.reset(),
+      f: () => api.flip(),
+      F: () => api.flip(),
+      Enter: () => focus && onOpen(PARTS[focus].view, stage.current!),
+    }
+    const fn = keys[e.key]
+    if (!fn) return
+    e.preventDefault()
+    fn()
+  }
+
+  const sensors = sensorsOf(s)
+  const isp = mediaOf(s).ispGBs
   // Bandwidth drives the memory particles; fall back to GPU, then CPU, when it is not available.
   const bw = s.memory.bandwidthGBs
   drive.current = {
@@ -503,91 +920,148 @@ export function Scene({ hw, s, systemW, llm, onOpen, hidden }: Props) {
     // The NAND flash fades from when this sample arrived, not from the last re-render.
     at: drive.current.t === s.t ? drive.current.at : performance.now(),
     t: s.t,
+    audio: !!sensors.audioPlaying,
   }
   useBoardCanvas(canvas, drive, g, !!hidden, s.t)
+  useFastLayer(padCanvas, lidEl, lidTag, live, g.TRACKPAD, !!hidden, s.t)
 
   const b = s.battery
+  const simple = useSimple()
   const t = s.thermal.cpuTempC
   // Drives every heat layer through one CSS variable, so the static case and top case never re-render.
   const heat = t != null ? step((t - 45) / 50) : ({ nominal: 0.1, fair: 0.4, serious: 0.7, critical: 1 } as const)[s.thermal.state]
-  const labels: Record<CalloutKey, { view: View; title: string; value: string } | null> = {
-    power: { view: 'power', title: 'Power', value: watts(systemW ?? socW(s)) },
-    memory: { view: 'memory', title: 'Memory', value: `${memGB(usedBytes(s))} / ${memGB(s.memory.totalBytes, 0)}` },
-    wifi: { view: 'io', title: 'Wi-Fi', value: rate(s.net.rxBps + s.net.txBps) },
-    ssd: { view: 'io', title: 'SSD', value: rate(s.disk.readBps + s.disk.writeBps) },
-    battery: b ? { view: 'battery', title: 'Battery', value: `${Math.round(b.percent)}%${b.chargeHeld ? ' · held' : b.charging ? ' · charging' : ''}` } : null,
+  const labels: Record<CalloutKey, Label | null> = {
+    power: { view: 'power', topic: 'power', title: 'Power', value: watts(systemW ?? socW(s)) },
+    memory: { view: 'memory', topic: 'unified-memory', title: simple ? 'Desk Space' : 'Memory', value: `${memGB(usedBytes(s))} / ${memGB(s.memory.totalBytes, 0)}` },
+    wifi: { view: 'io', topic: 'wifi', title: 'Wi-Fi', value: rate(s.net.rxBps + s.net.txBps) },
+    ssd: { view: 'io', topic: 'ssd', title: simple ? 'Storage' : 'SSD', value: rate(s.disk.readBps + s.disk.writeBps) },
+    battery: b ? { view: 'battery', topic: 'battery', title: 'Battery', value: `${Math.round(b.percent)}%${b.chargeHeld ? ' · held' : b.charging ? ' · charging' : ''}` } : null,
   }
-  const ys = { ...stack(SIDES.left, at, size.h), ...stack(SIDES.right, at, size.h) }
+  const onOff = (v: boolean | null, on: string, off: string) => (v == null ? null : v ? on : off)
+  const values: Record<PartKey, string | null> = {
+    soc: `${watts(socW(s))}${t != null ? ` · ${Math.round(t)}°C` : ''}`,
+    memory: labels.memory!.value,
+    ssd: `${simple ? 'Moving' : 'Read + write'} ${labels.ssd!.value}`,
+    wifi: `${simple ? 'Moving' : 'Traffic'} ${labels.wifi!.value}`,
+    power: labels.power!.value,
+    speakers: onOff(sensors.audioPlaying, 'Playing audio', 'Quiet'),
+    battery: labels.battery?.value ?? null,
+    trackpad: null,
+    display: sensors.lidAngleDeg == null ? null : `${lidLabel(sensors.lidAngleDeg)}${sensors.displayBrightness != null ? ` · brightness ${Math.round(sensors.displayBrightness * 100)}%` : ''}`,
+    camera: onOff(sensors.cameraInUse, 'In use right now', 'Off'),
+  }
   const ant = box(g.L.antennas)
+  const LAYER_NAMES = simple ? ['Battery', 'Main board', 'Keyboard', 'Screen'] : ['Bottom case + battery', 'Logic board', 'Top case', 'Display']
+  const fp = focus ? PARTS[focus] : null
+  const ring = (i: number) =>
+    fp && fp.layer === i && <div key={focus} className="focus-ring" style={{ left: fp.r.x - 6, top: fp.r.y - 6, width: fp.r.w + 12, height: fp.r.h + 12 }} />
+  const layer = (i: number, children: React.ReactNode) => (
+    <div className="layer" ref={(el) => void (layerEls.current[i] = el)} data-hot={fp?.layer === i || undefined}>
+      {children}
+      <span className="layer-tag" aria-hidden>
+        {LAYER_NAMES[i]}
+      </span>
+    </div>
+  )
   return (
-    <div className={`stage ${hidden ? 'stage-hidden' : ''}`} ref={stage}>
-      <div className="scene" style={{ width: BOX_W, height: BOX_H, transform: `translate(-50%, calc(-50% - ${FOOT_ROOM / 2}px)) scale(${Math.max(0.1, fit)})` }}>
-        <div className={`iso ${open ? 'open' : ''} ${llm ? 'llm' : ''}`} style={{ width: W, height: D, '--heat': heat } as CSSProperties}>
+    <div
+      className={`stage ${hidden ? 'stage-hidden' : ''}`}
+      ref={stage}
+      tabIndex={hidden ? -1 : 0}
+      role="group"
+      aria-roledescription="3D model"
+      aria-label={`Exploded ${hw.hasBattery ? 'MacBook Air' : 'Mac'}. Arrow keys turn it, plus and minus zoom, F flips it over, 0 resets. Use the Parts list to zoom into a part.`}
+      data-focus={focus ?? undefined}
+      onKeyDown={onKey}
+    >
+      <div className="scene" style={{ width: BOX_W, height: BOX_H, transform: `translate(-50%, calc(-50% - ${FOOT_ROOM / 2}px)) scale(${fit})` }}>
+        <div className={`iso ${open ? 'open' : ''} ${llm ? 'llm' : ''}`} ref={iso} style={{ width: W, height: D, '--heat': heat } as CSSProperties}>
           <div className="ground" />
-          <div className="layer" style={{ '--zc': '0px', '--zo': '0px' } as CSSProperties}>
-            <svg viewBox={`0 0 ${W} ${D}`} className="layer-svg">
-              <BottomCase g={g} />
-              {b && <BatteryLayer g={g} b={b} onOpen={onOpen} />}
-            </svg>
-            <Anchor k="battery" r={centre(g.CELLS[3])} />
-          </div>
-          <div className="layer" style={{ '--zc': '6px', '--zo': '55px' } as CSSProperties}>
-            <Board g={g} hw={hw} s={s} llm={llm} onOpen={onOpen} />
-            <canvas ref={canvas} className="particles" style={{ width: W, height: D }} />
-            <Anchor k="power" r={centre(g.PMU)} />
-            <Anchor k="memory" r={centre(g.DRAM[0])} />
-            <Anchor k="ssd" r={centre(g.NAND)} />
-            <Anchor k="wifi" r={{ x: ant.x + ant.w, y: ant.y + ant.h / 2 }} />
-            <Anchor k="soc" r={centre(g.PKG)} />
-          </div>
-          <div className="layer" style={{ '--zc': '10px', '--zo': '175px' } as CSSProperties}>
-            <Deck g={g} />
-          </div>
-          <div className="layer" style={{ '--zc': '14px', '--zo': '255px' } as CSSProperties}>
-            <Display g={g} />
-          </div>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="guide" ref={(el) => void (guideEls.current[i] = el)} />
+          ))}
+          {layer(
+            0,
+            <>
+              <svg viewBox={`0 0 ${W} ${D}`} className="layer-svg">
+                <BottomCase g={g} />
+                {b && <BatteryLayer g={g} b={b} />}
+                {b && focus === 'battery' && <BatteryDetail g={g} b={b} tempC={s.thermal.batteryTempC} />}
+              </svg>
+              <Underside g={g} />
+              {b?.charging && focus === 'battery' && <ChargeFlow g={g} paused={!!hidden} stamp={s.t} />}
+              <Anchor k="battery" r={centre(g.CELLS[3])} />
+              {ring(0)}
+            </>,
+          )}
+          {layer(
+            1,
+            <>
+              <Board g={g} hw={hw} s={s} llm={llm} mic={!!sensors.micInUse} focus={focus} />
+              <canvas ref={canvas} className="particles" style={{ width: W, height: D }} />
+              <Anchor k="power" r={centre(g.PMU)} />
+              <Anchor k="memory" r={centre(g.DRAM[0])} />
+              <Anchor k="ssd" r={centre(g.NAND)} />
+              <Anchor k="wifi" r={{ x: ant.x + ant.w, y: ant.y + ant.h / 2 }} />
+              <Anchor k="soc" r={centre(g.PKG)} />
+              {ring(1)}
+            </>,
+          )}
+          {layer(
+            2,
+            <>
+              <Deck g={g} kb={step(sensors.keyboardBacklight ?? 0, 10)} detail={focus === 'trackpad'} />
+              <canvas
+                ref={padCanvas}
+                className="fingers"
+                style={{ left: g.TRACKPAD.x - PAD, top: g.TRACKPAD.y - PAD, width: g.TRACKPAD.w + 2 * PAD, height: g.TRACKPAD.h + 2 * PAD }}
+              />
+              {ring(2)}
+            </>,
+          )}
+          {layer(
+            3,
+            // The fast loop sets this wrapper's tilt from the lid angle.
+            <div className="lid" ref={lidEl}>
+              <Display
+                g={g}
+                glow={sensors.displayBrightness == null ? null : step(sensors.displayBrightness, 10)}
+                camera={!!sensors.cameraInUse}
+                mic={!!sensors.micInUse}
+                focus={focus === 'display' || focus === 'camera' ? focus : null}
+                // Rounded, and only while the camera is focused, so the lid does not repaint every sample for it.
+                isp={focus === 'camera' && isp != null ? Math.round(isp * 10) / 10 : null}
+              />
+              {ring(3)}
+            </div>,
+          )}
         </div>
       </div>
+      {focus && <div className="focus-vignette" aria-hidden />}
       {/* Labels sit at the sides with leader lines, so nothing covers the board or the chip. */}
-      <div className={`callouts ${open ? 'open' : ''}`}>
-        <svg className="leaders" width={size.w} height={size.h}>
-          {(['left', 'right'] as const).flatMap((side) =>
-            SIDES[side].map((k) => {
-              const a = at[k]
-              const y = ys[k]
-              if (!a || y == null || !labels[k]) return null
-              const x = side === 'left' ? 12 + PILL_W : size.w - 12 - PILL_W
-              return (
-                <g key={k}>
-                  <path d={`M ${x} ${y + PILL_H / 2} H ${x + (side === 'left' ? 14 : -14)} L ${a.x} ${a.y}`} className="leader" />
-                  <circle cx={a.x} cy={a.y} r="3" className="leader-dot" />
-                </g>
-              )
-            }),
-          )}
-        </svg>
-        {(['left', 'right'] as const).flatMap((side) =>
-          // Top to bottom, so Tab follows what the eye sees.
-          [...SIDES[side]].sort((a, b) => (ys[a] ?? 0) - (ys[b] ?? 0)).map((k) => {
-            const l = labels[k]
-            const y = ys[k]
-            if (!l || y == null || !at[k]) return null
-            return (
-              <button
-                key={k}
-                className="callout"
-                style={{ top: y, [side]: 12, width: PILL_W, height: PILL_H }}
-                aria-label={`${l.title}, ${l.value}. Open details.`}
-                onClick={(e) => onOpen(l.view, e.currentTarget)}
-              >
-                <span className="tag-title">{l.title}</span>
-                <span className="tag-value">{l.value}</span>
-              </button>
-            )
-          }),
-        )}
+      {!compact && <Callouts stage={stage} labels={labels} size={size} open={open} onOpen={onOpen} bus={measure} />}
+      {/* The lid reading, and the way into the sensors panel; the fast loop writes the text. */}
+      <div className="lid-row">
+        <button className="lid-tag" onClick={(e) => onOpen('sensors', e.currentTarget)}>
+          <span ref={lidTag}>Sensors</span>
+          <span className="sr-only">. Open sensor details.</span>
+        </button>
+        <InfoButton topic="sensors" />
       </div>
-      {llm && <div className="llm-note">Highlighted path: model weights stream from memory into the GPU for every token.</div>}
+      <OrbitControls api={api} under={under} hasBattery={!!b} onPart={(k) => focusPart(k, swaps(k))} />
+      {focus && !panel && (
+        <FocusCard
+          k={focus}
+          value={values[focus]}
+          chip={hw.chip}
+          onDetails={(el) => onOpen(PARTS[focus].view, el)}
+          onBack={() => {
+            focusPart(null)
+            stage.current?.focus({ preventScroll: true })
+          }}
+        />
+      )}
+      {llm && !focus && <div className="llm-note">Highlighted path: model weights stream from memory into the GPU for every token.</div>}
     </div>
   )
 }

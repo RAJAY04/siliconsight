@@ -1,0 +1,355 @@
+/* Compression and swap lab */
+.cs-scene text,
+.cs-sim text {
+  font-family: var(--sans);
+  font-size: 12px;
+  fill: var(--text);
+}
+.cs-head {
+  font-weight: 650;
+  font-size: 14px !important;
+}
+.cs-sub {
+  fill: var(--muted) !important;
+  font-size: 11.5px !important;
+}
+.cs-sub.mono {
+  font-family: var(--mono) !important;
+}
+.k-wired { --c: var(--faint); }
+.k-A { --c: var(--accent); }
+.k-B { --c: var(--accent-alt); }
+.k-C { --c: var(--ok); }
+.k-N { --c: var(--warn); }
+.k-file { --c: var(--accent); }
+.k-cmp { --c: var(--accent-alt); }
+.k-free { --c: var(--line-strong); }
+
+.cs-frame rect {
+  fill: color-mix(in srgb, var(--c) 26%, var(--panel-solid));
+  stroke: color-mix(in srgb, var(--c) 70%, transparent);
+  stroke-width: 1.2;
+  transition: fill 0.3s, stroke 0.3s;
+}
+.cs-frame.k-free rect {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+  stroke-dasharray: 3 3;
+}
+.cs-frame.k-file rect {
+  fill: color-mix(in srgb, var(--c) 8%, var(--panel-solid));
+  stroke-dasharray: 5 3;
+}
+.cs-frame.k-cmp rect {
+  stroke-width: 2;
+  stroke-dasharray: 2 2;
+}
+.cs-frame-n {
+  font-family: var(--mono) !important;
+  font-size: 11px !important;
+  fill: var(--muted) !important;
+}
+.cs-frame-k {
+  font-size: 11px !important;
+  font-weight: 600;
+}
+.cs-frame.k-free .cs-frame-k {
+  fill: var(--muted) !important;
+  font-weight: 400;
+}
+.cs-frame.hot rect {
+  fill: color-mix(in srgb, var(--crit) 30%, var(--panel-solid));
+  stroke: var(--crit);
+}
+.cs-frame.pick rect,
+.cs-frame.fault rect {
+  stroke: var(--crit);
+  stroke-width: 2.5;
+  stroke-dasharray: none;
+}
+
+.cs-src rect {
+  fill: color-mix(in srgb, var(--warn) 18%, var(--panel-solid));
+  stroke: var(--warn);
+}
+.cs-src text {
+  font-weight: 600;
+}
+.cs-box > rect:first-child {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+}
+.cs-codec rect {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+  transition: fill 0.2s, stroke 0.2s;
+}
+.cs-codec text {
+  font-family: var(--mono) !important;
+  font-weight: 600;
+}
+.cs-codec.on rect {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.cs-seg {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.cs-seg.gone {
+  stroke-dasharray: 4 3;
+  fill: none;
+}
+.cs-chunk {
+  fill: color-mix(in srgb, var(--c) 70%, transparent);
+}
+.cs-chunk.A { --c: var(--accent); }
+.cs-chunk.C { --c: var(--ok); }
+.cs-swapfile rect {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.cs-swapfile rect.fill {
+  fill: color-mix(in srgb, var(--accent-alt) 35%, transparent);
+  stroke: none;
+}
+.cs-swapfile text {
+  font-family: var(--mono) !important;
+  font-size: 11px !important;
+}
+.cs-swapped rect {
+  fill: color-mix(in srgb, var(--ok) 60%, transparent);
+}
+.cs-lock path {
+  fill: none;
+  stroke: var(--warn);
+  stroke-width: 1.8;
+}
+.cs-lock rect {
+  fill: var(--warn);
+}
+
+.cs-token rect {
+  fill: color-mix(in srgb, var(--c, var(--accent)) 85%, var(--panel-solid));
+  stroke: var(--c, var(--accent));
+}
+.cs-token text {
+  font-family: var(--mono) !important;
+  font-size: 11px !important;
+  font-weight: 700;
+  fill: var(--on-accent) !important;
+}
+.cs-token.A { --c: var(--accent); }
+.cs-token.C { --c: var(--ok); }
+.cs-token.N { --c: var(--warn); }
+.cs-token.small { --c: var(--accent-alt); }
+.cs-token.seg { --c: var(--accent-alt); }
+.cs-token.bad rect {
+  fill: color-mix(in srgb, var(--crit) 22%, var(--panel-solid));
+  stroke: var(--crit);
+}
+.cs-token.bad text {
+  fill: var(--text) !important;
+}
+
+.cs-card rect,
+.cs-card-bg {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+}
+.cs-card-t {
+  font-weight: 650;
+  font-size: 13px !important;
+}
+.cs-card-l {
+  fill: var(--muted) !important;
+}
+.cs-lane {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.cs-chip rect {
+  fill: color-mix(in srgb, var(--c) 30%, var(--panel-solid));
+  stroke: var(--c);
+}
+.cs-chip text {
+  font-family: var(--mono) !important;
+  font-weight: 600;
+}
+.cs-chip.flash rect {
+  stroke: var(--ok);
+  stroke-width: 3;
+}
+.cs-chip.picked rect {
+  stroke: var(--crit);
+  stroke-width: 2.5;
+}
+.cs-tag {
+  fill: var(--ok) !important;
+  font-weight: 700;
+}
+.cs-race .track {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.cs-race.fast .done {
+  fill: var(--ok);
+}
+.cs-race.slow .done {
+  fill: var(--warn);
+}
+.cs-band rect {
+  fill: color-mix(in srgb, var(--c) 45%, transparent);
+}
+.cs-band.normal { --c: var(--ok); }
+.cs-band.warn { --c: var(--warn); }
+.cs-band.critical { --c: var(--crit); }
+.cs-band.now {
+  fill: var(--c);
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+.cs-needle {
+  fill: var(--text);
+}
+.cs-jet rect {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.cs-jet path {
+  stroke: var(--crit);
+  stroke-width: 2;
+}
+.cs-dialog > rect:first-child {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
+}
+.cs-dialog-t {
+  font-weight: 700;
+  font-size: 14px !important;
+}
+.cs-dialog-s {
+  fill: var(--muted) !important;
+}
+.cs-dialog-b {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+}
+
+.cs-kernel rect {
+  fill: var(--bg-2);
+  stroke: var(--line-strong);
+}
+.cs-kernel.on rect {
+  stroke: var(--accent);
+}
+.cs-kernel text {
+  font-size: 12.5px !important;
+}
+.cs-kernel-k {
+  font-weight: 700;
+  fill: var(--accent) !important;
+}
+
+.cs-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0 4px;
+  list-style: none;
+  font-size: 12px;
+  color: var(--muted);
+}
+.cs-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.cs-legend i {
+  width: 14px;
+  height: 12px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--c) 40%, var(--panel-solid));
+  border: 1px solid var(--c);
+}
+.cs-legend i.k-free,
+.cs-legend i.k-file {
+  border-style: dashed;
+}
+
+/* Try it */
+.cs-range input {
+  width: 220px;
+  accent-color: var(--accent);
+}
+.cs-sim-stage {
+  margin-top: 12px;
+}
+.lab-stage > svg.cs-sim {
+  min-width: 680px;
+}
+.cs-cell rect,
+rect.cs-cell {
+  transition: fill 0.35s, stroke 0.35s;
+}
+.cs-cell.free rect,
+rect.cs-cell.empty {
+  fill: var(--panel-solid);
+  stroke: var(--line-strong);
+  stroke-dasharray: 3 3;
+}
+.cs-cell.wired rect {
+  fill: color-mix(in srgb, var(--faint) 40%, var(--panel-solid));
+}
+.cs-cell.cache rect {
+  fill: color-mix(in srgb, var(--accent) 10%, var(--panel-solid));
+  stroke: var(--accent);
+  stroke-dasharray: 5 3;
+}
+.cs-cell.cmp rect,
+rect.cs-cell.cmp {
+  fill: color-mix(in srgb, var(--accent-alt) 45%, var(--panel-solid));
+  stroke: var(--accent-alt);
+}
+rect.cs-cell.swap {
+  fill: color-mix(in srgb, var(--warn) 45%, var(--panel-solid));
+  stroke: var(--warn);
+}
+.cs-cell.app rect {
+  fill: color-mix(in srgb, var(--c) 30%, var(--panel-solid));
+  stroke: var(--c);
+}
+.cs-cell.app.hot rect {
+  fill: color-mix(in srgb, var(--c) 60%, var(--panel-solid));
+  stroke-width: 2;
+}
+.cs-cell.d-text { --c: var(--accent); }
+.cs-cell.d-zeros { --c: var(--ok); }
+.cs-cell.d-random { --c: var(--crit); }
+.cs-cell text {
+  font-family: var(--mono) !important;
+  font-size: 11px !important;
+}
+.cs-gauge-t {
+  font-weight: 650;
+}
+.cs-gauge-t.warn {
+  fill: var(--warn) !important;
+}
+.cs-gauge-t.critical {
+  fill: var(--crit) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-frame rect,
+  .cs-cell rect,
+  rect.cs-cell,
+  .cs-codec rect {
+    transition: none;
+  }
+}
+rect.cs-band {
+  fill: color-mix(in srgb, var(--c) 30%, transparent);
+}
